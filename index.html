@@ -125,7 +125,7 @@ details.card summary{cursor:pointer}
 <div class="card"><h2>기타 사항</h2>
  <div class="noprint row"><button class="g" id="carry">전일 일지의 익일 계획 불러오기</button></div>
  <div class="note noprint">※ 입력한 내용은 자동으로 저장됩니다. 맨 위 ‘임시저장’ 버튼은 작성이 덜 끝났다는 표시로, 맨 위 ‘임시저장된 일지’에 날짜가 나타나 다른 컴퓨터에서 바로 찾아 이어 쓸 수 있습니다.</div>
- <div class="opt" style="margin:8px 0"><b>금일 업무내용 (공통)</b><div class="note noprint">분야 구분 없이 적는 내용입니다. 인쇄 시 모든 분야 금일 업무내용의 맨 아래에 ‘- 내용’ 형태로 추가됩니다(작업공정 ‘외 n개’ 계산에는 포함되지 않음).</div><textarea data-k="t_common"></textarea></div>
+ <div class="opt" style="margin:8px 0"><b>금일 업무내용 (공통)</b><div class="note noprint">분야 구분 없이 적는 내용입니다. 인쇄 시 방재실을 제외한 분야(기계·전기·소방·환경·조경건축)의 금일 업무내용 맨 아래에 ‘- 내용’ 형태로 반복 추가됩니다(작업공정 ‘외 n개’ 계산에는 포함되지 않음).</div><textarea data-k="t_common"></textarea></div>
  
  <div id="div"></div>
 </div>
@@ -232,7 +232,7 @@ function buildDoc(){
  var T='<table class="t"><tr><th colspan="6" style="width:38%">금일 점검</th><th>작업 전, 안전소통회의(TBM)</th><th style="width:26%">사 진</th></tr><tr class="k"><th style="width:58px">구 분</th><th>기계</th><th>전기</th><th>소방</th><th>환경</th><th>건축<br>조경</th><td rowspan="4" class="l x">◦ 시 간 : '+esc(q("tbm_t"))+'<br>◦ 참 여 : '+esc(q("tbm_p"))+'<br>◦ TBM 리더 : '+esc(q("tbm_l"))+'<br>◦ 작업공정 : '+esc(q("tbm_w"))+'<br>◦ <b>안전조치</b><br>'+sf+(q("tbm_f").trim()?'<br>◦ <b>환류</b><br>'+br(q("tbm_f")):'')+'</td><td rowspan="4" class="x">'+(photo?'<img src="'+photo+'" alt="">':'')+'</td></tr>'+ck+'</table>';
  var cl=q("t_common").split("\n").map(function(l){return l.trim()}).filter(Boolean).map(function(l){return/^[-·•*ㆍ○※◦▪▶]/.test(l)?l:"- "+l}).join("\n");
  var rows=DIV.map(function(d,i){var txt=q("t_"+d[0]);
-  if(cl&&i===DIV.length-1)txt=(txt.trim()?txt.replace(/\s+$/,"")+"\n":"")+cl;
+  if(cl&&d[1].replace(/\s/g,"")!=="방재실")txt=(txt.trim()?txt.replace(/\s+$/,"")+"\n":"")+cl;
   var a='<td class="l" colspan="7">'+br(txt)+'</td>';
  return'<tr class="h"><td class="b">'+d[1]+'</td>'+a+'<td class="l" colspan="5">'+br(q("n_"+d[0]))+'</td></tr>'}).join("");
  var A='<tr><td rowspan="5" class="b">음주측정<br>대상자</td>';
