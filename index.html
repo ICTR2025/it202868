@@ -272,9 +272,12 @@ async function getWeather(manual){
 }
 var WT=[],custItems=[],actNames=[];
 function wtByName(n){for(var i=0;i<WT.length;i++)if(WT[i].name===n)return WT[i];return null}
-function kwOf(t){return(t.kw||[]).concat([t.name]).map(function(x){return String(x).trim().toLowerCase()}).filter(Boolean)}
+function nz(x){return String(x).toLowerCase().replace(/\s+/g,"")}
+function kwOf(t){return(t.kw||[]).concat([t.name]).map(nz).filter(Boolean)}
+var MAXC=5,capHit=false;
+function addInst(t){(t.inst||[]).forEach(function(x){if(rec.custom.indexOf(x)>-1)return;if(rec.custom.length<MAXC)rec.custom.push(x);else capHit=true})}
 function matchedNames(){
- var txt=["t_common"].concat(DIV.map(function(d){return"t_"+d[0]})).map(q).join("\n").toLowerCase();
+ var txt=["t_common"].concat(DIV.map(function(d){return"t_"+d[0]})).map(q).join("\n");txt=nz(txt);
  return WT.filter(function(t){return kwOf(t).some(function(k){return txt.indexOf(k)>-1})}).map(function(t){return t.name})}
 function activeNames(){var a=(rec.wtSeen||[]).concat(rec.wtAdd||[]);return a.filter(function(n,i){return a.indexOf(n)===i&&wtByName(n)})}
 function mkDir(){var d=[];(rec.custom||[]).concat(rec.rnd||[]).forEach(function(x){if(d.indexOf(x)<0)d.push(x)});rec.dir=d}
@@ -292,8 +295,7 @@ function dropInst(n){
 function applyTypes(){
  if(!cur||!rec.wtSeen)return;
  var M=matchedNames(),changed=false;
- M.forEach(function(n){if(rec.wtSeen.indexOf(n)<0){rec.wtSeen.push(n);var t=wtByName(n);
-  (t.inst||[]).forEach(function(x){if(rec.custom.indexOf(x)<0)rec.custom.push(x)});changed=true}});
+ M.forEach(function(n){if(rec.wtSeen.indexOf(n)<0){rec.wtSeen.push(n);var t=wtByName(n);addInst(t);changed=true}});
  rec.wtSeen.slice().forEach(function(n){if(M.indexOf(n)<0&&rec.wtAdd.indexOf(n)<0){
   rec.wtSeen.splice(rec.wtSeen.indexOf(n),1);dropInst(n);changed=true}});
  if(changed){rebalance();showCustom();showDir()}
@@ -305,11 +307,13 @@ function showCustom(){
   h+='<div class="wtb2"><b>'+esc(t.name)+'</b>'+(((rec.wtAdd||[]).indexOf(n)>-1&&M.indexOf(n)<0)?' <button type="button" class="g wtx" data-a="'+k+'">제외</button>':'');
   if(t.risks&&t.risks.length)h+='<div class="note">예상 위험요인: '+t.risks.map(esc).join(" · ")+'</div>';
   h+='<div class="chk">';
-  (t.inst||[]).forEach(function(x){items.push(x);h+='<label><input type="checkbox" data-i="'+(items.length-1)+'"'+(sel.indexOf(x)>-1?" checked":"")+'> '+esc(x)+'</label>'});
+  (t.inst||[]).forEach(function(x){items.push(x);h+='<label><input type="checkbox" data-i="'+(items.length-1)+'"'+(sel.indexOf(x)>-1?" checked":(sel.length>=MAXC?" disabled":""))+'> '+esc(x)+'</label>'});
   h+='</div></div>'});
  var left=sel.filter(function(x){return items.indexOf(x)<0});
  if(left.length){h+='<div class="wtb2"><b>이전에 선택한 항목</b><div class="chk">';left.forEach(function(x){items.push(x);h+='<label><input type="checkbox" data-i="'+(items.length-1)+'" checked> '+esc(x)+'</label>'});h+='</div></div>'}
  custItems=items;
+ if(h)h='<div class="note"'+(capHit||sel.length>=MAXC?' style="color:#c62828"':'')+'>선택 '+sel.length+'/'+MAXC+'개'+(capHit?' · 최대 '+MAXC+'개까지 선택할 수 있어 일부 항목은 체크되지 않았습니다. 다른 항목을 해제하면 체크할 수 있습니다.':(sel.length>=MAXC?' · 최대 개수입니다.':''))+'</div>'+h;
+ capHit=false;
  $("cbody").innerHTML=h||'<div class="note">'+(WT.length?'추천된 작업 종류가 없습니다. 업무내용에 키워드가 들어가면 자동으로 나타나고, 아래에서 직접 추가할 수도 있습니다.':'등록된 작업 종류가 없습니다. 맨 아래 설정에서 작업 종류를 등록하세요.')+'</div>';
  var o='<option value="">작업 종류 선택…</option>';
  WT.forEach(function(t){if(actNames.indexOf(t.name)<0)o+='<option>'+esc(t.name)+'</option>'});
@@ -438,11 +442,12 @@ $("wtsave").onclick=async function(){
  WT=a;wtRender(WT);showCustom();$("wtmsg").textContent="저장했습니다. 다른 컴퓨터는 새로고침하면 반영됩니다."};
 $("wtadd").onclick=function(){var n=$("wtsel").value,t=wtByName(n);if(!t)return;
  rec.wtAdd=rec.wtAdd||[];if(rec.wtAdd.indexOf(n)<0)rec.wtAdd.push(n);
- rec.custom=rec.custom||[];(t.inst||[]).forEach(function(x){if(rec.custom.indexOf(x)<0)rec.custom.push(x)});
+ rec.custom=rec.custom||[];addInst(t);
  rebalance();showCustom();showDir();touch()};
 $("cbody").addEventListener("change",function(e){if(e.target.type!=="checkbox")return;
+ if(e.target.checked&&$("cbody").querySelectorAll("input:checked").length>MAXC){e.target.checked=false;capHit=true;showCustom();return}
  rec.custom=[].slice.call($("cbody").querySelectorAll("input:checked")).map(function(x){return custItems[x.dataset.i]});
- rebalance();showDir();touch()});
+ rebalance();showCustom();showDir();touch()});
 $("cbody").addEventListener("click",function(e){var b=e.target.closest(".wtx");if(!b)return;
  var n=actNames[b.dataset.a];rec.wtAdd=(rec.wtAdd||[]).filter(function(x){return x!==n});
  rec.wtSeen=(rec.wtSeen||[]).filter(function(x){return x!==n});dropInst(n);
