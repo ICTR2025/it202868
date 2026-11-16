@@ -1,9 +1,10 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <title>일일업무일지 작성 도우미</title>
 <style>
 :root{--bg:#f4f5f7;--card:#fff;--tx:#1d2733;--mu:#667085;--bd:#cfd6df;--ac:#1f5fbf;--hd:#e8eef8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -38,6 +39,11 @@ td.l{text-align:left}
 .al{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:6px}
 .al div{border:1px solid var(--bd);border-radius:6px;padding:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .al b{min-width:54px}
+.clk{padding:3px 8px;font-size:13px;line-height:1.2}
+.st-ok{color:#1a7f37}.st-err{color:#c62828}.st-w{color:var(--mu)}
+#cbox{border-color:#c62828}
+details.card summary{cursor:pointer}
+#dbox{border-color:var(--ac)}#dbox>div{margin:4px 0}.dopen{margin:2px 4px 2px 0}
 .note{font-size:12px;color:var(--mu)}
 @media(max-width:640px){.grid2{grid-template-columns:1fr}}
 .sig{display:none}
@@ -51,9 +57,21 @@ td.l{text-align:left}
 </style>
 </head>
 <body>
-<div class="wrap">
-<h1>일일업무일지 작성 도우미</h1>
-<div class="sub noprint">입력한 내용은 이 브라우저에 자동 저장됩니다. 작성이 끝나면 맨 아래 ‘인쇄용 파일 저장’을 누르세요.</div>
+<div class="wrap" id="login" style="display:none;max-width:380px">
+ <div class="card"><h1>일일업무일지</h1><div class="sub">사내 공용 계정으로 로그인하세요.</div>
+ <form id="lgf">
+  <div class="row"><label style="width:70px">이메일</label><input id="lge" type="email" autocomplete="username" required style="flex:1"></div>
+  <div class="row"><label style="width:70px">비밀번호</label><input id="lgp" type="password" autocomplete="current-password" required style="flex:1"></div>
+  <div class="row"><button type="submit">로그인</button><span class="note" id="lgmsg"></span></div>
+ </form></div>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+<div class="row noprint" style="justify-content:space-between"><h1>일일업무일지 작성 도우미</h1><div class="row"><span id="st" class="note"></span><button class="g" id="lgout" type="button">로그아웃</button></div></div>
+<div class="sub noprint">입력한 내용은 자동으로 서버에 저장되어 다른 컴퓨터에서도 같은 내용이 보입니다. 작성이 끝나면 맨 아래 ‘인쇄용 파일 저장’을 누르세요.</div>
+
+<div class="card noprint" id="cbox" style="display:none"></div>
+<div class="card noprint" id="dbox" style="display:none"></div>
 
 <div class="card">
  <table class="sig"><tr><th>작성자</th><th>담당자</th><th>팀장</th></tr><tr><td></td><td></td><td></td></tr></table>
@@ -97,6 +115,8 @@ td.l{text-align:left}
 
 <div class="card"><h2>기타 사항</h2>
  <div class="noprint row"><button class="g" id="carry">전일 일지의 익일 계획 불러오기</button></div>
+ <div class="noprint row"><input id="dmemo" placeholder="임시저장 메모 (예: 교육 입력함, 이어서 작성 요청)" style="flex:1;min-width:220px"><button class="g" id="dsave">임시저장</button></div>
+ <div class="note noprint">※ 임시저장하면 맨 위 ‘임시저장된 일지’에 표시됩니다. 다른 컴퓨터에서도 같은 날짜를 열어 이어서 쓸 수 있습니다.</div>
  <div class="opt" style="margin:8px 0"><b>금일 업무내용 (공통)</b><div class="note noprint">분야 구분 없이 적는 내용입니다. 인쇄 시 ‘금일 업무내용’으로 출력됩니다.</div><textarea data-k="t_common"></textarea></div>
  
  <div id="div"></div>
@@ -107,68 +127,65 @@ td.l{text-align:left}
  <div class="al" id="al"></div>
 </div>
 
+<details class="card noprint" id="cfg"><summary><b>설정 — 지시사항·안전조치 목록 관리</b></summary>
+ <div class="note">한 줄에 한 항목씩 입력하세요. ‘목록 저장’을 누르면 위의 선택 목록에 바로 반영됩니다. 저장하면 모든 컴퓨터에 공유됩니다.</div>
+ <label>관리감독자 안전작업 지시사항 (이 중 4개가 랜덤으로 선택됩니다)</label>
+ <textarea id="cfgp" style="min-height:170px"></textarea>
+ <label>안전조치 (위에서부터 3개가 기본 선택됩니다)</label>
+ <textarea id="cfgs" style="min-height:130px"></textarea>
+ <div class="row"><button id="cfgsave">목록 저장</button><button type="button" class="g" id="cfgdef">기본 목록 불러오기</button><span class="note" id="cfgmsg"></span></div>
+</details>
+
 <div class="row noprint"><button id="dl">인쇄용 파일 저장</button><div class="note" style="flex-basis:100%">※ ‘인쇄용 파일 저장’을 누르면 일일업무일지 양식의 파일이 저장됩니다. 파일을 열면 인쇄 창이 뜨며, 프린터 대신 ‘PDF로 저장’을 선택할 수도 있습니다.</div><button class="g" id="clr">오늘 입력 초기화</button></div>
 </div>
 
 <script>
+var SB_URL="https://nqxjiuklvhqzbpfqbrxx.supabase.co";
+var SB_KEY="sb_publishable_OvYm6966dyk9Z9IyiKpi_Q_bM2FBQtJ";
+var sb=null;try{if(typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY)}catch(e){}
+
 var CHECKERS="안한전, 이태금";
 var GAS=[["g1","관리동냉온수기"],["g2","검사고냉온수기"],["g3","연관보일러"],["g4","검사고보일러"],["g5","식당"]];
 var WAT=[["w1","시수(대)"],["w2","시수(소)"],["w3","시수(굴현)"],["w4","연관보일러 1"],["w5","연관보일러 2"],["w6","검사고"],["w7","옥외세척고"],["w8","정수"]];
-var POOL=["작업안전수칙 낭독","근골격계 예방 체조 실시","작업장 통로 확보로 위험요인 제거","기계·기구, 설비의 안전보건 점검","작업 전 보호구 착용 상태 확인","고소작업 시 안전대 착용 및 추락 방지","전기 작업 전 전원 차단 및 잠금·표지 부착","화기작업 전 소화기 비치 및 주변 가연물 제거","밀폐공간 작업 전 산소·유해가스 농도 측정","중량물 취급 시 2인 1조 작업 및 올바른 자세","작업 중 휴대전화 사용 금지 및 주변 확인","작업 종료 후 정리정돈 및 잔여 위험요인 확인","미끄럼 위험 구간 안내 및 신속한 제거","차량·장비 이동 시 신호수 배치 및 유도"];
-var SAFE=["금일 작업별 유해·위험요인 파악 및 안전관리 대책과 실천사항 공유","안전보호구 착용 및 안전구호 “함께 지키는 안전, 함께 만드는 신뢰” 제창","국민체조 실시(근골격 예방) 등","작업 전 설비 전원 차단 및 잠금장치 확인","작업장 주변 정리정돈 및 통로 확보","고소작업 시 안전대 착용 및 추락 방지 조치 확인"];
+var POOL_DEF=["작업안전수칙 낭독","근골격계 예방 체조 실시","작업장 통로 확보로 위험요인 제거","기계·기구, 설비의 안전보건 점검","작업 전 보호구 착용 상태 확인","고소작업 시 안전대 착용 및 추락 방지","전기 작업 전 전원 차단 및 잠금·표지 부착","화기작업 전 소화기 비치 및 주변 가연물 제거","밀폐공간 작업 전 산소·유해가스 농도 측정","중량물 취급 시 2인 1조 작업 및 올바른 자세","작업 중 휴대전화 사용 금지 및 주변 확인","작업 종료 후 정리정돈 및 잔여 위험요인 확인","미끄럼 위험 구간 안내 및 신속한 제거","차량·장비 이동 시 신호수 배치 및 유도"];
+var SAFE_DEF=["금일 작업별 유해·위험요인 파악 및 안전관리 대책과 실천사항 공유","안전보호구 착용 및 안전구호 “함께 지키는 안전, 함께 만드는 신뢰” 제창","국민체조 실시(근골격 예방) 등","작업 전 설비 전원 차단 및 잠금장치 확인","작업장 주변 정리정돈 및 통로 확보","고소작업 시 안전대 착용 및 추락 방지 조치 확인"];
 var DIV=[["m","기 계"],["e","전 기"],["f","소 방"],["v","환 경"],["c","조경·건축"],["b","방 재 실"]];
 var CHK=[["일일/주간"],["월간이상"],["기타"]];
 var CB=["lm","le","lf","lv","lc"];
 var NAMES=["이근수","유성재","이이규","노성주","김종원","위치준","정용기","송대성","이경탁","남상준","김대우","최철훈","정명진","전면우","정일서","우제열"];
+
+var POOL=POOL_DEF.slice(),SAFE=SAFE_DEF.slice();
 var $=function(i){return document.getElementById(i)};
-var S={get:function(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
-var cur="",rec={};
+var cur="",rec={},photo=null,rev=null,dirty=false,saving=false,pending=false,timer=null,conflict=false,prevData=[],draftList=[],dirItems=[],sfItems=[];
 
 function iso(d){var m=("0"+(d.getMonth()+1)).slice(-2),dd=("0"+d.getDate()).slice(-2);return d.getFullYear()+"-"+m+"-"+dd}
+function z2(v){return("0"+v).slice(-2)}
+function hhmm(){var n=new Date();return z2(n.getHours())+":"+z2(n.getMinutes())}
+function setStatus(t,c){var s=$("st");s.textContent=t;s.className="note st-"+(c||"w")}
+function errMsg(e){return(e&&e.message)?e.message:"오류"}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
+
 function build(){
  var h="";GAS.forEach(function(g){h+='<tr><td class="l">'+g[1]+'</td><td><input type="number" class="p" data-k="p_'+g[0]+'" data-m="'+g[0]+'"></td><td><input type="number" data-k="c_'+g[0]+'" data-m="'+g[0]+'" class="c"></td><td class="u" id="u_'+g[0]+'"></td></tr>'});$("gas").innerHTML=h;
  h="";WAT.forEach(function(g){h+='<tr><td class="l">'+g[1]+'</td><td><input type="number" class="p" data-k="p_'+g[0]+'" data-m="'+g[0]+'"></td><td><input type="number" data-k="c_'+g[0]+'" data-m="'+g[0]+'" class="c"></td><td class="u" id="u_'+g[0]+'"></td></tr>'});$("wat").innerHTML=h;
  h="";CHK.forEach(function(r){h+='<tr><td>'+r[0]+'</td>';CB.forEach(function(c,i){h+='<td><input type="number" class="sm" style="width:56px" value="'+(r[0]=="일일/주간"?0:"")+'" data-k="'+c+i+r[0]+'"></td>'.replace(c+i+r[0],c+"_"+CHK.indexOf(r))});h+='</tr>'});$("chk").innerHTML=h;
- h="";SAFE.forEach(function(s,i){h+='<label><input type="checkbox" data-k="sf'+i+'"'+(i<3?" checked":"")+'> '+s+'</label>'});$("sf").innerHTML=h;
- h="";DIV.forEach(function(d){h+='<div style="margin:8px 0"><b>'+d[1]+'</b><div class="grid2"><div><label>금일 업무내용</label><textarea data-k="t_'+d[0]+'"></textarea></div><div><label>익일 업무계획</label><textarea data-k="n_'+d[0]+'"></textarea></div></div></div>'});$("div").innerHTML=h;
- h="";NAMES.forEach(function(n,i){h+='<div><b>'+n+'</b><input type="number" step="0.01" min="0" class="sm" value="0.00" data-k="a'+i+'"><input type="time" data-k="at'+i+'"></div>'});$("al").innerHTML=h;
+  h="";DIV.forEach(function(d){h+='<div style="margin:8px 0"><b>'+d[1]+'</b><div class="grid2"><div><label>금일 업무내용</label><textarea data-k="t_'+d[0]+'"></textarea></div><div><label>익일 업무계획</label><textarea data-k="n_'+d[0]+'"></textarea></div></div></div>'});$("div").innerHTML=h;
+ h="";NAMES.forEach(function(n,i){h+='<div><b>'+n+'</b><input type="number" step="0.01" min="0" class="sm" value="0.00" data-k="a'+i+'"><input type="time" data-k="at'+i+'"><button type="button" class="g clk" data-t="at'+i+'" title="현재 시간 입력">현재 시간</button></div>'});$("al").innerHTML=h;
  $("chker").textContent=CHECKERS;
 }
+
 function fields(){return document.querySelectorAll("[data-k]")}
 function collect(){var o=rec;fields().forEach(function(e){o[e.dataset.k]=e.type==="checkbox"?e.checked:e.value});return o}
-function save(){if(!cur)return;collect();S.set("log:"+cur,rec)}
-function prevRecs(date){return Object.keys(localStorage).filter(function(k){return k.indexOf("log:2")===0&&k<"log:"+date}).sort().reverse().map(function(k){return S.get(k)||{}})}
-function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
-function showDir(){$("dir").innerHTML=POOL.map(function(t,i){return'<label><input type="checkbox" data-i="'+i+'"'+((rec.dir||[]).indexOf(t)>-1?" checked":"")+'> '+t+'</label>'}).join("")}
-function calc(){GAS.concat(WAT).forEach(function(g){var p=document.querySelector('[data-k="p_'+g[0]+'"]').value,c=document.querySelector('[data-k="c_'+g[0]+'"]').value;$("u_"+g[0]).textContent=(p!==""&&c!=="")?(Number(c)-Number(p)):""})}
-function showPhoto(){var im=$("pv");if(rec.photo){im.src=rec.photo;im.style.display="block"}else{im.removeAttribute("src");im.style.display="none"}}
-function load(date){
- cur=date;rec=S.get("log:"+date)||{};
- var s=S.get("log:settings")||{};
- fields().forEach(function(e){var k=e.dataset.k,d=e.type==="checkbox"?e.defaultChecked:e.defaultValue;
-  if(k in rec){if(e.type==="checkbox")e.checked=rec[k];else e.value=rec[k]}else if(["who","mgr","lead"].indexOf(k)>-1&&s[k]){e.value=s[k]}else{if(e.type==="checkbox")e.checked=d;else e.value=d}
-  e.readOnly=false});
- var pv=prevRecs(date);
- GAS.concat(WAT).forEach(function(g){var f=null;for(var i=0;i<pv.length;i++){if(pv[i]["c_"+g[0]]){f=pv[i]["c_"+g[0]];break}}
-  var el=document.querySelector('[data-k="p_'+g[0]+'"]');if(f!==null){el.value=f;el.readOnly=true}});
- if(!rec.dir){rec.dir=shuffle(POOL).slice(0,4)}
- var d=new Date(date+"T00:00:00");$("dow").textContent=["일","월","화","수","목","금","토"][d.getDay()]+"요일";
- showDir();showPhoto();calc();save();
-}
-function resize(file,cb){var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){var m=900,s=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=im.width*s;c.height=im.height*s;c.getContext("2d").drawImage(im,0,0,c.width,c.height);cb(c.toDataURL("image/jpeg",.7))};im.src=r.result};r.readAsDataURL(file)}
 
-build();
-$("date").value=iso(new Date());
-load($("date").value);
-$("date").addEventListener("change",function(){if($("date").value){save();load($("date").value)}});
-document.addEventListener("input",function(e){if(!e.target.dataset||!e.target.dataset.k)return;calc();save();
- if(["who","mgr","lead"].indexOf(e.target.dataset.k)>-1){var s=S.get("log:settings")||{};s[e.target.dataset.k]=e.target.value;S.set("log:settings",s)}});
-document.addEventListener("change",function(e){if(e.target.dataset&&e.target.dataset.k)save()});
-$("shuf").onclick=function(){rec.dir=shuffle(POOL).slice(0,4);showDir();save()};
-$("dir").addEventListener("change",function(){rec.dir=[].slice.call($("dir").querySelectorAll("input:checked")).map(function(e){return POOL[e.dataset.i]});save()});
-$("ph").onchange=function(){var f=this.files[0];if(!f)return;resize(f,function(u){rec.photo=u;showPhoto();if(!S.set("log:"+cur,rec))alert("저장 공간이 부족해 사진이 저장되지 않았습니다. 이전 일지를 정리해 주세요.")})};
-$("carry").onclick=function(){var p=prevRecs(cur)[0];if(!p){alert("불러올 전일 일지가 없습니다.");return}
- DIV.forEach(function(d){var v=p["n_"+d[0]];if(v)document.querySelector('[data-k="t_'+d[0]+'"]').value=v});save()};
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function listHtml(items,sel){return items.map(function(t,i){return'<label><input type="checkbox" data-i="'+i+'"'+(sel.indexOf(t)>-1?" checked":"")+'> '+esc(t)+'</label>'}).join("")}
+function showDir(){var sel=rec.dir||[];dirItems=POOL.concat(sel.filter(function(t){return POOL.indexOf(t)<0}));$("dir").innerHTML=listHtml(dirItems,sel)}
+function showSf(){var sel=rec.sfs||[];sfItems=SAFE.concat(sel.filter(function(t){return SAFE.indexOf(t)<0}));$("sf").innerHTML=listHtml(sfItems,sel)}
+
+function calc(){GAS.concat(WAT).forEach(function(g){var p=document.querySelector('[data-k="p_'+g[0]+'"]').value,c=document.querySelector('[data-k="c_'+g[0]+'"]').value;$("u_"+g[0]).textContent=(p!==""&&c!=="")?(Number(c)-Number(p)):""})}
+function showPhoto(){var im=$("pv");if(photo){im.src=photo;im.style.display="block"}else{im.removeAttribute("src");im.style.display="none"}}
+
+function resize(file,cb){var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){var m=900,s=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=im.width*s;c.height=im.height*s;c.getContext("2d").drawImage(im,0,0,c.width,c.height);cb(c.toDataURL("image/jpeg",.7))};im.src=r.result};r.readAsDataURL(file)}
 function esc(s){return String(s||"").replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
 function br(s){return esc(s).replace(/\n/g,"<br>")}
 function q(k){var e=document.querySelector('[data-k="'+k+'"]');return e?e.value:""}
@@ -179,7 +196,7 @@ function buildDoc(){
  var dstr=dt.getFullYear()+"년 "+(dt.getMonth()+1)+"월 "+dt.getDate()+"일 "+$("dow").textContent;
  var mc=function(k){return'<td class="n">'+P(k)+'</td><td class="n">'+C(k)+'</td><td class="n">'+U(k)+'</td>'};
  var dirs=(rec.dir||[]).map(function(t){return"- "+esc(t)}).join("<br>");
- var sf=SAFE.filter(function(s,i){return document.querySelector('[data-k="sf'+i+'"]').checked}).map(function(t){return"- "+esc(t)}).join("<br>");
+ var sf=(rec.sfs||[]).map(function(t){return"- "+esc(t)}).join("<br>");
  var H='<table class="hd"><tr><td class="tt">일 일 업 무 일 지</td><td><table class="t sg"><tr><th>작성자</th><th>담당자</th><th>팀 장</th></tr><tr><td></td><td></td><td></td></tr></table></td></tr></table>';
  var I='<table class="t"><tr><th class="b2 w2">일 자</th><td class="b2">'+dstr+'</td><th class="b2 w2">날 씨</th><td class="b2">온도 (최저 '+esc(q("tmin"))+'℃ 최고 '+esc(q("tmax"))+'℃) 습도 '+esc(q("hum"))+'%</td></tr><tr><th class="b2">출결사항</th><td class="b2">결근 '+esc(q("abs"))+' 명</td><th class="b2">특기사항</th><td class="l">'+esc(q("spec"))+'</td></tr></table>';
  var E='<div class="bar">에너지사용량 검침</div><table class="t t0"><tr><th rowspan="2" style="width:104px">항목</th><th colspan="3">가스(Nm³)</th><th rowspan="2" colspan="2" class="w2">항목</th><th colspan="3">수도(㎥)</th></tr><tr><th>전일지침</th><th>금일지침</th><th>사용량</th><th>전일지침</th><th>금일지침</th><th>사용량</th></tr>';
@@ -192,7 +209,7 @@ function buildDoc(){
  E+='<tr class="e3"><td colspan="4" rowspan="2" class="l d">'+dirs+'</td><td colspan="2" class="l">옥외세척고</td>'+mc("w7")+'</tr>';
  E+='<tr class="e3"><td colspan="2" class="l">정수</td>'+mc("w8")+'</tr></table>';
  var ck=CHK.map(function(r){return'<tr class="k"><td>'+r[0]+'</td>'+CB.map(function(c,i){return'<td>'+esc(q(c+i+r[0]))+'</td>'}).join('')+'</tr>'}).join('');
- var T='<table class="t"><tr><th colspan="6" style="width:38%">금일 점검</th><th>작업 전, 안전소통회의(TBM)</th><th style="width:26%">사 진</th></tr><tr><th style="width:58px">구 분</th><th>기계</th><th>전기</th><th>소방</th><th>환경</th><th>건축<br>조경</th><td rowspan="4" class="l x">◦ 시 간 : '+esc(q("tbm_t"))+'<br>◦ 참 여 : '+esc(q("tbm_p"))+'<br>◦ TBM 리더 : '+esc(q("tbm_l"))+'<br>◦ 작업공정 : '+esc(q("tbm_w"))+'<br>◦ <b>안전조치</b><br>'+sf+(q("tbm_f").trim()?'<br>◦ <b>환류</b><br>'+br(q("tbm_f")):'')+'</td><td rowspan="4" class="x">'+(rec.photo?'<img src="'+rec.photo+'" alt="">':'')+'</td></tr>'+ck+'</table>';
+ var T='<table class="t"><tr><th colspan="6" style="width:38%">금일 점검</th><th>작업 전, 안전소통회의(TBM)</th><th style="width:26%">사 진</th></tr><tr><th style="width:58px">구 분</th><th>기계</th><th>전기</th><th>소방</th><th>환경</th><th>건축<br>조경</th><td rowspan="4" class="l x">◦ 시 간 : '+esc(q("tbm_t"))+'<br>◦ 참 여 : '+esc(q("tbm_p"))+'<br>◦ TBM 리더 : '+esc(q("tbm_l"))+'<br>◦ 작업공정 : '+esc(q("tbm_w"))+'<br>◦ <b>안전조치</b><br>'+sf+(q("tbm_f").trim()?'<br>◦ <b>환류</b><br>'+br(q("tbm_f")):'')+'</td><td rowspan="4" class="x">'+(photo?'<img src="'+photo+'" alt="">':'')+'</td></tr>'+ck+'</table>';
  var common=q("t_common").trim();
  var extra=DIV.filter(function(d){return q("t_"+d[0]).trim()}).map(function(d){return"["+d[1]+"] "+q("t_"+d[0])}).join("\n");
  var merged=br(common+(extra?"\n"+extra:""));
@@ -208,10 +225,161 @@ function buildDoc(){
  var css='@page{size:A4;margin:8mm}body{width:192mm;margin:0;font:10.3px/1.35 "돋움",Dotum,"Malgun Gothic",sans-serif;color:#000}table{border-collapse:collapse;width:100%}.t{margin-top:5px}.t0{margin-top:-1px}th,td{border:1px solid #000;padding:2px 4px;text-align:center;vertical-align:middle}th{background:#eee;font-weight:700}.l{text-align:left}.n{text-align:right}.hd{margin:0}.hd>tbody>tr>td{border:0;padding:0}.tt{font-size:28px;font-weight:900;letter-spacing:.3em;text-align:left}.sg{width:230px;margin:0 0 0 auto}.sg td{height:48px}.bar{border:1px solid #000;padding:2px 6px;font-weight:700;font-size:12px;margin-top:5px}.d,.x{vertical-align:top}.x{height:110px}.k td{height:24px}.e3 td,.e3 th{height:30px}.b{font-weight:700}.b2{font-weight:700;font-size:12px}.w2{width:62px}.lb{white-space:nowrap;letter-spacing:-.6px}tr.h td{height:42px}img{max-width:100%;max-height:120px}';
  return'<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>일일업무일지 '+cur+'</title><style>'+css+'</style></head><body>'+H+I+E+T+K+A+'<script>onload=function(){setTimeout(function(){print()},400)}<\/script></body></html>';
 }
-$("dl").onclick=async function(){try{var d=window.claude&&await window.claude.use("downloads");if(!d){alert("이 화면에서는 파일 저장을 사용할 수 없습니다.");return}save();await d.save({filename:"일일업무일지_"+cur+".html",data:new Blob([buildDoc()],{type:"text/html"})})}catch(e){if(!e||e.code!=="declined")alert("저장하지 못했습니다. ("+(e&&e.code?e.code:"오류")+")")}};
-$("clr").onclick=function(){if(confirm("오늘 입력한 내용을 모두 지울까요?")){try{localStorage.removeItem("log:"+cur)}catch(e){}load(cur)}};
+
+
+function nowStr(){return iso(new Date())+" "+hhmm()}
+function fillFields(){
+ fields().forEach(function(e){var k=e.dataset.k,d=e.type==="checkbox"?e.defaultChecked:e.defaultValue;
+  if(k in rec){if(e.type==="checkbox")e.checked=rec[k];else e.value=rec[k]}else{if(e.type==="checkbox")e.checked=d;else e.value=d}
+  e.readOnly=false});
+ GAS.concat(WAT).forEach(function(g){var f=null;for(var i=0;i<prevData.length;i++){if(prevData[i]["c_"+g[0]]){f=prevData[i]["c_"+g[0]];break}}
+  var el=document.querySelector('[data-k="p_'+g[0]+'"]');if(f!==null){el.value=f;el.readOnly=true}});
+ if(!rec.dir)rec.dir=shuffle(POOL).slice(0,4);
+ if(!rec.sfs)rec.sfs=SAFE.slice(0,3);
+ var dt=new Date(cur+"T00:00:00");$("dow").textContent=["일","월","화","수","목","금","토"][dt.getDay()]+"요일";
+ $("dmemo").value=(rec._draft&&rec._draft.memo)||"";
+ showDir();showSf();showPhoto();calc();showDraft();
+}
+async function load(date){
+ setStatus("불러오는 중…","w");
+ var row=null,prev=[];
+ try{
+  var a=await sb.from("logs").select("data,photo,updated_at").eq("log_date",date).maybeSingle();if(a.error)throw a.error;row=a.data;
+  var b=await sb.from("logs").select("log_date,data").lt("log_date",date).order("log_date",{ascending:false}).limit(14);if(b.error)throw b.error;
+  prev=(b.data||[]).map(function(x){return x.data||{}});
+ }catch(e){setStatus("불러오지 못했습니다: "+errMsg(e),"err");if(cur)$("date").value=cur;return false}
+ clearTimeout(timer);
+ cur=date;conflict=false;dirty=false;$("cbox").style.display="none";
+ rec=(row&&row.data)||{};photo=(row&&row.photo)||null;rev=row?new Date(row.updated_at).toISOString():null;prevData=prev;
+ fillFields();
+ setStatus(row?"불러왔습니다":"새 일지입니다. 입력하면 자동 저장됩니다.","ok");
+ refreshDrafts();
+ return true;
+}
+function touch(){if(!cur)return;dirty=true;setStatus("저장 대기 중…","w");clearTimeout(timer);timer=setTimeout(saveNow,900)}
+function onConflict(){
+ conflict=true;setStatus("저장되지 않음 — 다른 컴퓨터에서 먼저 수정됨","err");
+ var b=$("cbox");b.style.display="block";
+ b.innerHTML='<b>⚠ 다른 컴퓨터에서 이 날짜의 일지를 먼저 수정했습니다.</b> 지금 입력한 내용은 저장하지 않았습니다. 필요한 내용은 따로 복사해 두세요. <button type="button" class="g" id="creload">최신 내용 불러오기</button>';
+}
+async function saveNow(){
+ clearTimeout(timer);
+ if(!cur||!dirty||conflict)return true;
+ if(saving){pending=true;return false}
+ saving=true;
+ var date=cur,sent=new Date().toISOString(),ok=false;
+ collect();
+ try{
+  setStatus("저장 중…","w");
+  if(rev===null){
+   var r=await sb.from("logs").insert({log_date:date,data:rec,photo:photo,updated_at:sent});
+   if(r.error){if(r.error.code==="23505")onConflict();else throw r.error}else ok=true;
+  }else{
+   var u=await sb.from("logs").update({data:rec,photo:photo,updated_at:sent}).eq("log_date",date).eq("updated_at",rev).select("updated_at");
+   if(u.error)throw u.error;
+   if(!u.data||!u.data.length)onConflict();else ok=true;
+  }
+  if(ok){rev=sent;dirty=false;setStatus("저장됨 "+hhmm(),"ok")}
+ }catch(e){setStatus("저장 실패: "+errMsg(e)+" (5초 뒤 다시 시도합니다)","err");timer=setTimeout(saveNow,5000)}
+ saving=false;
+ if(pending){pending=false;if(dirty&&!conflict)return saveNow()}
+ return ok;
+}
+async function flush(){clearTimeout(timer);var n=0;while(saving&&n<100){await sleep(100);n++}if(dirty&&!conflict)await saveNow()}
+async function gotoDate(d){
+ await flush();
+ if(dirty&&!conflict){setStatus("저장이 끝나지 않아 이동하지 않았습니다. 잠시 후 다시 시도하세요.","err");$("date").value=cur;return}
+ $("date").value=d;await load(d);
+}
+async function refreshDrafts(){
+ try{var r=await sb.from("logs").select("log_date,draft:data->_draft").order("log_date",{ascending:false}).limit(60);if(r.error)throw r.error;
+  draftList=(r.data||[]).filter(function(x){return x.draft})}catch(e){draftList=[]}
+ showDraft();
+}
+function showDraft(){
+ var h="";
+ if(rec._draft)h+='<div><b>📌 임시저장된 일지입니다.</b> '+esc(rec._draft.at)+(rec._draft.memo?' · '+esc(rec._draft.memo):'')+' <button type="button" class="g" id="ddone">작성 완료</button></div>';
+ var o=draftList.filter(function(x){return x.log_date!==cur});
+ if(o.length)h+='<div class="row"><b>임시저장된 일지</b>'+o.map(function(x){return'<button type="button" class="g dopen" data-d="'+x.log_date+'">'+x.log_date+(x.draft.memo?' · '+esc(x.draft.memo):'')+'</button>'}).join("")+'</div>';
+ $("dbox").innerHTML=h;$("dbox").style.display=h?"block":"none";
+}
+async function loadLists(){
+ try{var r=await sb.from("settings").select("value").eq("key","lists").maybeSingle();if(r.error)throw r.error;
+  var L=r.data&&r.data.value;if(L){if(L.pool&&L.pool.length)POOL=L.pool;if(L.safe&&L.safe.length)SAFE=L.safe}}
+ catch(e){setStatus("목록을 불러오지 못했습니다: "+errMsg(e),"err")}
+ cfgFill();
+}
+function cfgFill(){$("cfgp").value=POOL.join("\n");$("cfgs").value=SAFE.join("\n")}
+function lines(v){return v.split("\n").map(function(x){return x.trim()}).filter(function(x,i,a){return x&&a.indexOf(x)===i})}
+
+/* ---- 화면 동작 연결 ---- */
+document.addEventListener("input",function(e){var t=e.target;if(!t.dataset||!t.dataset.k)return;calc();touch()});
+document.addEventListener("change",function(e){if(e.target.dataset&&e.target.dataset.k)touch()});
+$("date").addEventListener("change",function(){var v=$("date").value;if(v)gotoDate(v)});
+$("shuf").onclick=function(){rec.dir=shuffle(POOL).slice(0,4);showDir();touch()};
+$("dir").addEventListener("change",function(){rec.dir=[].slice.call($("dir").querySelectorAll("input:checked")).map(function(e){return dirItems[e.dataset.i]});touch()});
+$("sf").addEventListener("change",function(){rec.sfs=[].slice.call($("sf").querySelectorAll("input:checked")).map(function(e){return sfItems[e.dataset.i]});touch()});
+$("ph").onchange=function(){var f=this.files[0];if(!f)return;resize(f,function(u){photo=u;showPhoto();dirty=true;saveNow()})};
+$("carry").onclick=function(){var p=prevData[0];if(!p){alert("불러올 전일 일지가 없습니다.");return}
+ DIV.forEach(function(d){var v=p["n_"+d[0]];if(v)document.querySelector('[data-k="t_'+d[0]+'"]').value=v});touch()};
+$("al").addEventListener("click",function(e){var b=e.target.closest(".clk");if(!b)return;var el=document.querySelector('[data-k="'+b.dataset.t+'"]');el.value=hhmm();touch()});
+$("cfgsave").onclick=async function(){var p=lines($("cfgp").value),t=lines($("cfgs").value);
+ if(!p.length||!t.length){$("cfgmsg").textContent="각 목록에 항목이 1개 이상 있어야 합니다.";return}
+ try{var r=await sb.from("settings").upsert({key:"lists",value:{pool:p,safe:t},updated_at:new Date().toISOString()});if(r.error)throw r.error}
+ catch(e){$("cfgmsg").textContent="저장하지 못했습니다: "+errMsg(e);return}
+ POOL=p;SAFE=t;cfgFill();showDir();showSf();$("cfgmsg").textContent="저장했습니다. 다른 컴퓨터는 새로고침하면 반영됩니다."};
+$("cfgdef").onclick=function(){$("cfgp").value=POOL_DEF.join("\n");$("cfgs").value=SAFE_DEF.join("\n");$("cfgmsg").textContent="기본 목록을 불러왔습니다. ‘목록 저장’을 눌러야 적용됩니다."};
+$("dsave").onclick=async function(){
+ collect();rec._draft={at:nowStr(),memo:$("dmemo").value.trim()};dirty=true;
+ await saveNow();
+ if(conflict){delete rec._draft;showDraft();return}
+ await refreshDrafts();
+};
+$("dbox").addEventListener("click",async function(e){var b=e.target.closest("button");if(!b)return;
+ if(b.id==="ddone"){delete rec._draft;$("dmemo").value="";dirty=true;await saveNow();await refreshDrafts()}
+ else if(b.classList.contains("dopen")){gotoDate(b.dataset.d)}});
+$("cbox").addEventListener("click",async function(e){if(e.target.id==="creload"){var d=cur;conflict=false;dirty=false;await load(d)}});
+$("clr").onclick=async function(){if(!confirm("오늘 입력한 내용을 모두 지울까요?"))return;
+ rec={};photo=null;conflict=false;$("cbox").style.display="none";fillFields();dirty=true;await saveNow()};
+$("dl").onclick=async function(){
+ await flush();collect();
+ var url=URL.createObjectURL(new Blob([buildDoc()],{type:"text/html"})),a=document.createElement("a");
+ a.href=url;a.download="일일업무일지_"+cur+".html";document.body.appendChild(a);a.click();a.remove();
+ setTimeout(function(){URL.revokeObjectURL(url)},3000)};
+window.addEventListener("beforeunload",function(e){if(dirty&&!conflict){e.preventDefault();e.returnValue=""}});
+document.addEventListener("visibilitychange",function(){if(document.hidden&&dirty&&!conflict)saveNow()});
+
+/* ---- 로그인 ---- */
+function showLogin(m){$("login").style.display="block";$("app").style.display="none";$("lgmsg").textContent=m||""}
+async function start(){
+ $("login").style.display="none";$("app").style.display="block";
+ await loadLists();
+ $("date").value=iso(new Date());
+ await load($("date").value);
+}
+$("lgf").addEventListener("submit",async function(e){
+ e.preventDefault();
+ if(!sb){$("lgmsg").textContent="서버 연결 도구를 불러오지 못했습니다. 새로고침해 주세요.";return}
+ $("lgmsg").textContent="로그인 중…";
+ try{
+  var r=await sb.auth.signInWithPassword({email:$("lge").value.trim(),password:$("lgp").value});
+  if(r.error){var m=r.error.message||"";
+   if(/invalid login/i.test(m))$("lgmsg").textContent="이메일 또는 비밀번호가 올바르지 않습니다.";
+   else if(/fetch|network|load failed/i.test(m))$("lgmsg").textContent="서버에 연결하지 못했습니다. 인터넷 연결을 확인하세요. (Claude 미리보기 화면에서는 외부 서버 접속이 막혀 있을 수 있습니다.)";
+   else $("lgmsg").textContent="로그인하지 못했습니다: "+m;
+   return}
+  $("lgp").value="";await start();
+ }catch(x){$("lgmsg").textContent="로그인하지 못했습니다: "+errMsg(x)}
+});
+$("lgout").onclick=async function(){await flush();try{await sb.auth.signOut()}catch(e){}location.reload()};
+async function boot(){
+ build();
+ if(!sb){showLogin("서버 연결 도구를 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침하세요.");return}
+ try{var r=await sb.auth.getSession();if(r.data&&r.data.session){await start();return}}catch(e){}
+ showLogin("");
+}
+boot();
+
 </script>
 </body>
 </html>
-
-</body></html>
