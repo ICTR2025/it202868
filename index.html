@@ -143,7 +143,7 @@ details.card summary{cursor:pointer}
  <div class="row"><button id="cfgsave">목록 저장</button><button type="button" class="g" id="cfgdef">기본 목록 불러오기</button><span class="note" id="cfgmsg"></span></div>
  <hr style="border:0;border-top:1px solid var(--bd);margin:14px 0">
  <b>작업 종류 관리</b>
- <div class="note">작업 종류마다 키워드·위험요인·관리감독자 지시사항을 등록합니다. 일지의 금일 업무내용에 키워드가 들어 있으면 해당 작업 종류가 자동으로 추천됩니다. 키워드가 너무 짧으면(예: 한 글자) 엉뚱한 작업이 추천될 수 있습니다.</div>
+ <div class="note">작업 종류마다 키워드·위험요인·관리감독자 지시사항을 등록합니다. 일지의 금일 업무내용에 키워드가 들어 있으면 해당 작업 종류가 자동으로 추천됩니다. 키워드가 너무 짧으면(예: 한 글자) 엉뚱한 작업이 추천될 수 있습니다. ‘적용 월’을 적으면 그 달의 일지에서만 추천됩니다(예: 온열 6-8, 한랭 11-2).</div>
  <div id="wted"></div>
  <div class="row"><button type="button" class="g" id="wtnew">작업 종류 추가</button><button type="button" id="wtsave">작업 종류 저장</button><span class="note" id="wtmsg"></span></div>
 </details>
@@ -278,7 +278,12 @@ var MAXC=5,capHit=false;
 function addInst(t){(t.inst||[]).forEach(function(x){if(rec.custom.indexOf(x)>-1)return;if(rec.custom.length<MAXC)rec.custom.push(x);else capHit=true})}
 function matchedNames(){
  var txt=["t_common"].concat(DIV.map(function(d){return"t_"+d[0]})).map(q).join("\n");txt=nz(txt);
- return WT.filter(function(t){return kwOf(t).some(function(k){return txt.indexOf(k)>-1})}).map(function(t){return t.name})}
+ return WT.filter(function(t){return inSeason(t)&&kwOf(t).some(function(k){return txt.indexOf(k)>-1})}).map(function(t){return t.name})}
+function inSeason(t){
+ var m=String(t.m||"").replace(/\s+/g,"");if(!m)return true;
+ var mo=+(cur||"").slice(5,7);if(!mo)return true;
+ return m.split(",").some(function(r){var a=r.split(/[-~]/),x=parseInt(a[0],10),y=a.length>1?parseInt(a[1],10):x;
+  if(!x||!y)return false;return x<=y?(mo>=x&&mo<=y):(mo>=x||mo<=y)})}
 function activeNames(){var a=(rec.wtSeen||[]).concat(rec.wtAdd||[]);return a.filter(function(n,i){return a.indexOf(n)===i&&wtByName(n)})}
 function mkDir(){var d=[];(rec.custom||[]).concat(rec.rnd||[]).forEach(function(x){if(d.indexOf(x)<0)d.push(x)});rec.dir=d}
 function rebalance(){
@@ -326,12 +331,12 @@ async function loadWT(){
  wtRender(WT);showCustom();
 }
 function wtRender(arr){
- var h="";arr.forEach(function(){h+='<div class="card wte"><div class="row"><label>작업 종류</label><input class="wn" style="flex:1;min-width:160px"><button type="button" class="g wdel">삭제</button></div><label>키워드 (쉼표로 구분)</label><input class="wk" style="width:100%"><label>위험요인 (한 줄에 하나)</label><textarea class="wr"></textarea><label>관리감독자 지시사항 (한 줄에 하나)</label><textarea class="wi"></textarea></div>'});
+ var h="";arr.forEach(function(){h+='<div class="card wte"><div class="row"><label>작업 종류</label><input class="wn" style="flex:1;min-width:160px"><button type="button" class="g wdel">삭제</button></div><label>키워드 (쉼표로 구분)</label><input class="wk" style="width:100%"><label>적용 월 (비우면 연중 / 예: 6-8 또는 11-2 또는 6-8,12)</label><input class="wm" style="width:100%" placeholder="예: 6-8"><label>위험요인 (한 줄에 하나)</label><textarea class="wr"></textarea><label>관리감독자 지시사항 (한 줄에 하나)</label><textarea class="wi"></textarea></div>'});
  $("wted").innerHTML=h||'<div class="note">등록된 작업 종류가 없습니다. ‘작업 종류 추가’를 눌러 등록하세요.</div>';
  var bl=$("wted").querySelectorAll(".wte");
- arr.forEach(function(t,i){bl[i].querySelector(".wn").value=t.name||"";bl[i].querySelector(".wk").value=(t.kw||[]).join(", ");bl[i].querySelector(".wr").value=(t.risks||[]).join("\n");bl[i].querySelector(".wi").value=(t.inst||[]).join("\n")});
+ arr.forEach(function(t,i){bl[i].querySelector(".wn").value=t.name||"";bl[i].querySelector(".wk").value=(t.kw||[]).join(", ");bl[i].querySelector(".wm").value=t.m||"";bl[i].querySelector(".wr").value=(t.risks||[]).join("\n");bl[i].querySelector(".wi").value=(t.inst||[]).join("\n")});
 }
-function wtRead(){return[].slice.call($("wted").querySelectorAll(".wte")).map(function(b){return{name:b.querySelector(".wn").value.trim(),kw:b.querySelector(".wk").value.split(/[,，\n]/).map(function(x){return x.trim()}).filter(Boolean),risks:lines(b.querySelector(".wr").value),inst:lines(b.querySelector(".wi").value)}})}
+function wtRead(){return[].slice.call($("wted").querySelectorAll(".wte")).map(function(b){return{name:b.querySelector(".wn").value.trim(),kw:b.querySelector(".wk").value.split(/[,，\n]/).map(function(x){return x.trim()}).filter(Boolean),m:b.querySelector(".wm").value.trim(),risks:lines(b.querySelector(".wr").value),inst:lines(b.querySelector(".wi").value)}})}
 function workText(){
  var n=0;DIV.map(function(d){return"t_"+d[0]}).forEach(function(k){q(k).split("\n").forEach(function(l){if(/^\s*-/.test(l))n++})});
  var raw=q("t_m").split("\n").filter(function(l){return l.trim()})[0]||"";
