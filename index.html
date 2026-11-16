@@ -45,7 +45,7 @@ td.l{text-align:left}
 #cbox{border-color:#c62828}
 .wtb{border:1px solid var(--bd);border-radius:8px;padding:8px;margin:8px 0}.wtb2{margin:8px 0}.wte textarea{min-height:70px}
 details.card summary{cursor:pointer}
-#dbox{border-color:var(--ac)}#dbox>div{margin:4px 0}.dopen{margin:2px 4px 2px 0}
+
 .note{font-size:12px;color:var(--mu)}
 @media(max-width:640px){.grid2{grid-template-columns:1fr}}
 .sig{display:none}
@@ -69,11 +69,10 @@ details.card summary{cursor:pointer}
 </div>
 
 <div class="wrap" id="app" style="display:none">
-<div class="row noprint" style="justify-content:space-between"><h1>일일업무일지 작성 도우미</h1><div class="row"><span id="st" class="note"></span><button class="g" id="clr" type="button" style="color:#c62828;border-color:#c62828">모두 삭제</button><button class="g" id="dsave" type="button" title="작성이 덜 끝난 일지로 표시해 다른 사람이 이어 쓰게 합니다">임시저장</button><button class="g" id="lgout" type="button">로그아웃</button></div></div>
+<div class="row noprint" style="justify-content:space-between"><h1>일일업무일지 작성 도우미</h1><div class="row"><span id="st" class="note"></span><button class="g" id="clr" type="button" style="color:#c62828;border-color:#c62828">모두 삭제</button><button class="g" id="lgout" type="button">로그아웃</button></div></div>
 <div class="sub noprint">입력한 내용은 자동으로 서버에 저장되어 다른 컴퓨터에서도 같은 내용이 보입니다. 작성이 끝나면 맨 아래 ‘인쇄용 파일 저장’을 누르세요.</div>
 
 <div class="card noprint" id="cbox" style="display:none"></div>
-<div class="card noprint" id="dbox" style="display:none"></div>
 
 <div class="card">
  <table class="sig"><tr><th>작성자</th><th>담당자</th><th>팀장</th></tr><tr><td></td><td></td><td></td></tr></table>
@@ -124,7 +123,6 @@ details.card summary{cursor:pointer}
 
 <div class="card"><h2>기타 사항</h2>
  <div class="noprint row"><button class="g" id="carry">전일 일지의 익일 계획 불러오기</button></div>
- <div class="note noprint">※ 입력한 내용은 자동으로 저장됩니다. 맨 위 ‘임시저장’ 버튼은 작성이 덜 끝났다는 표시로, 맨 위 ‘임시저장된 일지’에 날짜가 나타나 다른 컴퓨터에서 바로 찾아 이어 쓸 수 있습니다.</div>
  <div class="opt" style="margin:8px 0"><b>금일 업무내용 (공통)</b><div class="note noprint">분야 구분 없이 적는 내용입니다. 인쇄 시 방재실을 제외한 분야(기계·전기·소방·환경·조경건축)의 금일 업무내용 맨 아래에 ‘- 내용’ 형태로 반복 추가됩니다(작업공정 ‘외 n개’ 계산에는 포함되지 않음).</div><textarea data-k="t_common"></textarea></div>
  
  <div id="div"></div>
@@ -349,7 +347,7 @@ function fillFields(){
  var dt=new Date(cur+"T00:00:00");$("dow").textContent=["일","월","화","수","목","금","토"][dt.getDay()]+"요일";
  if(rec._wAuto===undefined)rec._wAuto=!rec.tbm_w;
  autoWork();
- showCustom();showDir();showSf();showPhoto();calc();showDraft();
+ showCustom();showDir();showSf();showPhoto();calc();
 }
 async function load(date){
  setStatus("불러오는 중…","w");
@@ -364,7 +362,6 @@ async function load(date){
  rec=(row&&row.data)||{};photo=(row&&row.photo)||null;rev=row?new Date(row.updated_at).toISOString():null;prevData=prev;
  fillFields();
  setStatus(row?"불러왔습니다":"새 일지입니다. 입력하면 자동 저장됩니다.","ok");
- refreshDrafts();
  getWeather(false);
  return true;
 }
@@ -402,18 +399,6 @@ async function gotoDate(d){
  await flush();
  if(dirty&&!conflict){setStatus("저장이 끝나지 않아 이동하지 않았습니다. 잠시 후 다시 시도하세요.","err");$("date").value=cur;return}
  $("date").value=d;await load(d);
-}
-async function refreshDrafts(){
- try{var r=await sb.from("logs").select("log_date,draft:data->_draft").order("log_date",{ascending:false}).limit(60);if(r.error)throw r.error;
-  draftList=(r.data||[]).filter(function(x){return x.draft})}catch(e){draftList=[]}
- showDraft();
-}
-function showDraft(){
- var h="";
- if(rec._draft)h+='<div><b>📌 임시저장된 일지입니다.</b> '+esc(rec._draft.at)+' <button type="button" class="g" id="ddone">작성 완료</button></div>';
- var o=draftList.filter(function(x){return x.log_date!==cur});
- if(o.length)h+='<div class="row"><b>임시저장된 일지</b>'+o.map(function(x){return'<button type="button" class="g dopen" data-d="'+x.log_date+'">'+x.log_date+'</button>'}).join("")+'</div>';
- $("dbox").innerHTML=h;$("dbox").style.display=h?"block":"none";
 }
 async function loadLists(){
  try{var r=await sb.from("settings").select("value").eq("key","lists").maybeSingle();if(r.error)throw r.error;
@@ -472,15 +457,6 @@ $("cfgsave").onclick=async function(){var p=lines($("cfgp").value),t=lines($("cf
  catch(e){$("cfgmsg").textContent="저장하지 못했습니다: "+errMsg(e);return}
  POOL=p;SAFE=t;cfgFill();showDir();showSf();$("cfgmsg").textContent="저장했습니다. 다른 컴퓨터는 새로고침하면 반영됩니다."};
 $("cfgdef").onclick=function(){$("cfgp").value=POOL_DEF.join("\n");$("cfgs").value=SAFE_DEF.join("\n");$("cfgmsg").textContent="기본 목록을 불러왔습니다. ‘목록 저장’을 눌러야 적용됩니다."};
-$("dsave").onclick=async function(){
- collect();rec._draft={at:nowStr()};dirty=true;
- await saveNow();
- if(conflict){delete rec._draft;showDraft();return}
- await refreshDrafts();
-};
-$("dbox").addEventListener("click",async function(e){var b=e.target.closest("button");if(!b)return;
- if(b.id==="ddone"){delete rec._draft;dirty=true;await saveNow();await refreshDrafts()}
- else if(b.classList.contains("dopen")){gotoDate(b.dataset.d)}});
 $("cbox").addEventListener("click",async function(e){if(e.target.id==="creload"){var d=cur;conflict=false;dirty=false;await load(d)}});
 $("clr").onclick=async function(){if(!confirm(cur+" 일지에 입력·저장된 내용(사진 포함)을 모두 지웁니다.\n지운 뒤에는 되돌릴 수 없습니다. 계속할까요?"))return;
  rec={};photo=null;conflict=false;$("cbox").style.display="none";fillFields();dirty=true;await saveNow()};
