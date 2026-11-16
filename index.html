@@ -39,6 +39,7 @@ td.l{text-align:left}
 .al{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:6px}
 .al div{border:1px solid var(--bd);border-radius:6px;padding:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .al b{min-width:54px}
+.ast{width:auto;padding:3px 4px;font-size:13px}.ast+input:disabled{opacity:.4}
 .clk{padding:3px 8px;font-size:13px;line-height:1.2}
 .st-ok{color:#1a7f37}.st-err{color:#c62828}.st-w{color:var(--mu)}
 #cbox{border-color:#c62828}
@@ -68,7 +69,7 @@ details.card summary{cursor:pointer}
 </div>
 
 <div class="wrap" id="app" style="display:none">
-<div class="row noprint" style="justify-content:space-between"><h1>일일업무일지 작성 도우미</h1><div class="row"><span id="st" class="note"></span><button class="g" id="dsave" type="button" title="작성이 덜 끝난 일지로 표시해 다른 사람이 이어 쓰게 합니다">임시저장</button><button class="g" id="lgout" type="button">로그아웃</button></div></div>
+<div class="row noprint" style="justify-content:space-between"><h1>일일업무일지 작성 도우미</h1><div class="row"><span id="st" class="note"></span><button class="g" id="clr" type="button" style="color:#c62828;border-color:#c62828">모두 삭제</button><button class="g" id="dsave" type="button" title="작성이 덜 끝난 일지로 표시해 다른 사람이 이어 쓰게 합니다">임시저장</button><button class="g" id="lgout" type="button">로그아웃</button></div></div>
 <div class="sub noprint">입력한 내용은 자동으로 서버에 저장되어 다른 컴퓨터에서도 같은 내용이 보입니다. 작성이 끝나면 맨 아래 ‘인쇄용 파일 저장’을 누르세요.</div>
 
 <div class="card noprint" id="cbox" style="display:none"></div>
@@ -124,7 +125,7 @@ details.card summary{cursor:pointer}
 <div class="card"><h2>기타 사항</h2>
  <div class="noprint row"><button class="g" id="carry">전일 일지의 익일 계획 불러오기</button></div>
  <div class="note noprint">※ 입력한 내용은 자동으로 저장됩니다. 맨 위 ‘임시저장’ 버튼은 작성이 덜 끝났다는 표시로, 맨 위 ‘임시저장된 일지’에 날짜가 나타나 다른 컴퓨터에서 바로 찾아 이어 쓸 수 있습니다.</div>
- <div class="opt" style="margin:8px 0"><b>금일 업무내용 (공통)</b><div class="note noprint">분야 구분 없이 적는 내용입니다. 인쇄 시 ‘금일 업무내용’으로 출력됩니다.</div><textarea data-k="t_common"></textarea></div>
+ <div class="opt" style="margin:8px 0"><b>금일 업무내용 (공통)</b><div class="note noprint">분야 구분 없이 적는 내용입니다. 인쇄 시 모든 분야 금일 업무내용의 맨 아래에 ‘- 내용’ 형태로 추가됩니다(작업공정 ‘외 n개’ 계산에는 포함되지 않음).</div><textarea data-k="t_common"></textarea></div>
  
  <div id="div"></div>
 </div>
@@ -148,7 +149,7 @@ details.card summary{cursor:pointer}
  <div class="row"><button type="button" class="g" id="wtnew">작업 종류 추가</button><button type="button" id="wtsave">작업 종류 저장</button><span class="note" id="wtmsg"></span></div>
 </details>
 
-<div class="row noprint"><button id="dl">인쇄용 파일 저장</button><div class="note" style="flex-basis:100%">※ ‘인쇄용 파일 저장’을 누르면 일일업무일지 양식의 파일이 저장됩니다. 파일을 열면 인쇄 창이 뜨며, 프린터 대신 ‘PDF로 저장’을 선택할 수도 있습니다.</div><button class="g" id="clr">오늘 입력 초기화</button></div>
+<div class="row noprint"><button id="dl">인쇄용 파일 저장</button><div class="note" style="flex-basis:100%">※ ‘인쇄용 파일 저장’을 누르면 일일업무일지 양식의 파일이 저장됩니다. 파일을 열면 인쇄 창이 뜨며, 프린터 대신 ‘PDF로 저장’을 선택할 수도 있습니다.</div></div>
 </div>
 
 <script>
@@ -164,7 +165,8 @@ var SAFE_DEF=["금일 작업별 유해·위험요인 파악 및 안전관리 대
 var DIV=[["m","기 계"],["e","전 기"],["f","소 방"],["v","환 경"],["c","조경·건축"],["b","방 재 실"]];
 var CHK=[["일일/주간"],["월간이상"],["기타"]];
 var CB=["lm","le","lf","lv","lc"];
-var NAMES=["이근수","유성재","이이규","노성주","김종원","위치준","정용기","송대성","이경탁","남상준","김대우","최철훈","정명진","전면우","정일서","우제열"];
+var EXEMPT={"우제영":"근로시간면제"};
+var NAMES=["이근수","유성재","이이규","노성주","김종원","위치준","정용기","송대성","이경탁","남상준","김대우","최철훈","정명진","전면우","정일서","우제영"];
 
 var POOL=POOL_DEF.slice(),SAFE=SAFE_DEF.slice();
 var $=function(i){return document.getElementById(i)};
@@ -182,7 +184,7 @@ function build(){
  h="";WAT.forEach(function(g){h+='<tr><td class="l">'+g[1]+'</td><td><input type="number" class="p" data-k="p_'+g[0]+'" data-m="'+g[0]+'"></td><td><input type="number" data-k="c_'+g[0]+'" data-m="'+g[0]+'" class="c"></td><td class="u" id="u_'+g[0]+'"></td></tr>'});$("wat").innerHTML=h;
  h="";CHK.forEach(function(r){h+='<tr><td>'+r[0]+'</td>';CB.forEach(function(c,i){h+='<td><input type="number" class="sm" style="width:56px" value="'+(r[0]=="일일/주간"?0:"")+'" data-k="'+c+i+r[0]+'"></td>'.replace(c+i+r[0],c+"_"+CHK.indexOf(r))});h+='</tr>'});$("chk").innerHTML=h;
   h="";DIV.forEach(function(d){h+='<div style="margin:8px 0"><b>'+d[1]+'</b><div class="grid2"><div><label>금일 업무내용</label><textarea data-k="t_'+d[0]+'"></textarea></div><div><label>익일 업무계획</label><textarea data-k="n_'+d[0]+'"></textarea></div></div></div>'});$("div").innerHTML=h;
- h="";NAMES.forEach(function(n,i){h+='<div><b>'+n+'</b><input type="number" step="0.01" min="0" class="sm" value="0.00" data-k="a'+i+'"><input type="time" data-k="at'+i+'"><button type="button" class="g clk" data-t="at'+i+'" title="현재 시간 입력">현재 시간</button></div>'});$("al").innerHTML=h;
+ h="";NAMES.forEach(function(n,i){if(EXEMPT[n]){h+='<div><b>'+n+'</b><span class="note">'+EXEMPT[n]+' (측정 안 함)</span></div>';return}h+='<div><b>'+n+'</b><select data-k="as'+i+'" class="ast" title="비번/휴무 선택"><option value="">측정</option><option>비번</option><option>휴무</option></select><input type="number" step="0.01" min="0" class="sm" value="0.00" data-k="a'+i+'"><input type="time" data-k="at'+i+'"><button type="button" class="g clk" data-t="at'+i+'" title="현재 시간 입력">현재 시간</button></div>'});$("al").innerHTML=h;
  $("chker").textContent=CHECKERS;
 }
 
@@ -228,19 +230,18 @@ function buildDoc(){
  E+='<tr class="e3"><td colspan="2" class="l">정수</td>'+mc("w8")+'</tr></table>';
  var ck=CHK.map(function(r){return'<tr class="k"><td>'+r[0]+'</td>'+CB.map(function(c,i){return'<td>'+esc(q(c+i+r[0]))+'</td>'}).join('')+'</tr>'}).join('');
  var T='<table class="t"><tr><th colspan="6" style="width:38%">금일 점검</th><th>작업 전, 안전소통회의(TBM)</th><th style="width:26%">사 진</th></tr><tr class="k"><th style="width:58px">구 분</th><th>기계</th><th>전기</th><th>소방</th><th>환경</th><th>건축<br>조경</th><td rowspan="4" class="l x">◦ 시 간 : '+esc(q("tbm_t"))+'<br>◦ 참 여 : '+esc(q("tbm_p"))+'<br>◦ TBM 리더 : '+esc(q("tbm_l"))+'<br>◦ 작업공정 : '+esc(q("tbm_w"))+'<br>◦ <b>안전조치</b><br>'+sf+(q("tbm_f").trim()?'<br>◦ <b>환류</b><br>'+br(q("tbm_f")):'')+'</td><td rowspan="4" class="x">'+(photo?'<img src="'+photo+'" alt="">':'')+'</td></tr>'+ck+'</table>';
- var common=q("t_common").trim();
- var extra=DIV.filter(function(d){return q("t_"+d[0]).trim()}).map(function(d){return"["+d[1]+"] "+q("t_"+d[0])}).join("\n");
- var merged=br(common+(extra?"\n"+extra:""));
- var rows=DIV.map(function(d,i){var a='<td class="l" colspan="7">'+br(q("t_"+d[0]))+'</td>';
-  if(common)a=(i===0)?'<td class="l" colspan="7" rowspan="'+DIV.length+'">'+merged+'</td>':'';
-  return'<tr class="h"><td class="b">'+d[1]+'</td>'+a+'<td class="l" colspan="5">'+br(q("n_"+d[0]))+'</td></tr>'}).join("");
+ var cl=q("t_common").split("\n").map(function(l){return l.trim()}).filter(Boolean).map(function(l){return/^[-·•*ㆍ○※◦▪▶]/.test(l)?l:"- "+l}).join("\n");
+ var rows=DIV.map(function(d,i){var txt=q("t_"+d[0]);
+  if(cl&&i===DIV.length-1)txt=(txt.trim()?txt.replace(/\s+$/,"")+"\n":"")+cl;
+  var a='<td class="l" colspan="7">'+br(txt)+'</td>';
+ return'<tr class="h"><td class="b">'+d[1]+'</td>'+a+'<td class="l" colspan="5">'+br(q("n_"+d[0]))+'</td></tr>'}).join("");
  var A='<tr><td rowspan="5" class="b">음주측정<br>대상자</td>';
- for(var c=0;c<4;c++)A+='<th>성 명</th><th>측정수치(%)</th><th>시간</th>';
+ for(var c=0;c<4;c++)A+='<th>성 명</th><th class="mv">측정수치(%)</th><th>시간</th>';
  A+='</tr>';
- for(var r=0;r<4;r++){A+='<tr>';for(c=0;c<4;c++){var i=r*4+c;A+='<td>'+NAMES[i]+'</td><td>'+esc(q("a"+i))+'</td><td>'+esc(q("at"+i))+'</td>'}A+='</tr>'}
+ for(var r=0;r<4;r++){A+='<tr>';for(c=0;c<4;c++){var i=r*4+c,nm=NAMES[i],st=q("as"+i);A+='<td>'+nm+'</td>'+(EXEMPT[nm]?'<td colspan="2">'+EXEMPT[nm]+'</td>':st?'<td>'+esc(st)+'</td><td></td>':'<td>'+esc(q("a"+i))+'</td><td>'+esc(q("at"+i))+'</td>')}A+='</tr>'}
  var K='<table class="t g13"><colgroup><col style="width:62px">'+new Array(13).join('<col>')+'</colgroup><tr><td colspan="13" class="bar">기타 사항</td></tr><tr><th>구 분</th><th colspan="7">금 일 업 무 내 용</th><th colspan="5">익 일 업 무 계 획</th></tr>'+rows+'<tr><td class="b">음주검사<br>시행자</td><td colspan="12" class="l">- '+esc(CHECKERS)+'</td></tr>'+A+'</table>';
- var css='.hp{margin:0}@page{size:A4;margin:8mm}body{width:192mm;margin:0;font:10.3px/1.35 "돋움",Dotum,"Malgun Gothic",sans-serif;color:#000}table{border-collapse:collapse;width:100%}.t{margin-top:5px;border:1.5pt solid #000}th,td{border:.5pt solid #000;padding:2px 4px;text-align:center;vertical-align:middle}th{background:#eee;font-weight:700}.l{text-align:left}.n{text-align:right}.hd{margin:0}.hd>tbody>tr>td{border:0;padding:0}.tt{font-size:28px;font-weight:900;letter-spacing:.3em;text-align:left}.sg{width:230px;margin:0 0 0 auto}.sg td{height:42px}td.bar{text-align:left;padding:2px 6px;font-weight:700;font-size:12px}.g13{table-layout:fixed}.g13 th{font-size:9.5px}.d,.x{vertical-align:top}.x{height:110px}.k td,.k th{height:30px}.e3 td,.e3 th{height:28px}.b{font-weight:700}.b2{font-weight:700;font-size:12px}.w2{width:62px}.lb{white-space:nowrap;letter-spacing:-.6px}tr.h td{height:36px}img{max-width:100%;max-height:120px}';
- return'<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>일일업무일지 '+cur+'</title><style>'+css+'</style></head><body>'+H+I+E+T+K+'<script>onload=function(){setTimeout(function(){print()},400)}<\/script></body></html>';
+ var css='.hp{margin:0}.mv{white-space:nowrap;padding:2px 0!important;font-size:8.5px!important;letter-spacing:-.3px}@page{size:A4;margin:8mm}body{width:192mm;margin:0;font:10.3px/1.35 "돋움",Dotum,"Malgun Gothic",sans-serif;color:#000}table{border-collapse:collapse;width:100%}.t{margin-top:5px;border:1.5pt solid #000}th,td{border:.5pt solid #000;padding:2px 4px;text-align:center;vertical-align:middle}th{background:#eee;font-weight:700}.l{text-align:left}.n{text-align:right}.hd{margin:0}.hd>tbody>tr>td{border:0;padding:0}.tt{font-size:28px;font-weight:900;letter-spacing:.3em;text-align:left}.sg{width:230px;margin:0 0 0 auto}.sg td{height:42px}td.bar{text-align:left;padding:2px 6px;font-weight:700;font-size:12px}.g13{table-layout:fixed}.g13 th{font-size:9.5px}.d,.x{vertical-align:top}.x{height:110px}.k td,.k th{height:30px}.e3 td,.e3 th{height:28px}.b{font-weight:700}.b2{font-weight:700;font-size:12px}.w2{width:62px}.lb{white-space:nowrap;letter-spacing:-.6px}tr.h td{height:36px}img{max-width:100%;max-height:120px}';
+ return'<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>일일업무일지 '+cur+'</title><style>'+css+'</style></head><body>'+H+I+E+T+K+'<script>onload=function(){var b=document.body,lim=1050,z=1;while(z>0.45){b.style.width=(192/z)+"mm";b.style.zoom=z;if(b.offsetHeight*z<=lim)break;z-=0.01}setTimeout(function(){print()},400)}<\/script></body></html>';
 }
 
 
@@ -324,7 +325,7 @@ function wtRender(arr){
 }
 function wtRead(){return[].slice.call($("wted").querySelectorAll(".wte")).map(function(b){return{name:b.querySelector(".wn").value.trim(),kw:b.querySelector(".wk").value.split(/[,，\n]/).map(function(x){return x.trim()}).filter(Boolean),risks:lines(b.querySelector(".wr").value),inst:lines(b.querySelector(".wi").value)}})}
 function workText(){
- var n=0;["t_common"].concat(DIV.map(function(d){return"t_"+d[0]})).forEach(function(k){q(k).split("\n").forEach(function(l){if(/^\s*-/.test(l))n++})});
+ var n=0;DIV.map(function(d){return"t_"+d[0]}).forEach(function(k){q(k).split("\n").forEach(function(l){if(/^\s*-/.test(l))n++})});
  var raw=q("t_m").split("\n").filter(function(l){return l.trim()})[0]||"";
  var first=raw.trim().replace(/^-+\s*/,"");
  if(!first)return "";
@@ -343,7 +344,7 @@ function fillFields(){
  if(!rec.wtAdd)rec.wtAdd=[];
  if(!rec.rnd)rec.rnd=(rec.dir&&rec.dir.length)?rec.dir.slice():shuffle(POOL).slice(0,4);
  if(!rec.wtSeen)rec.wtSeen=matchedNames();
- mkDir();
+ mkDir();alSync();
  if(!rec.sfs)rec.sfs=SAFE.slice(0,3);
  var dt=new Date(cur+"T00:00:00");$("dow").textContent=["일","월","화","수","목","금","토"][dt.getDay()]+"요일";
  if(rec._wAuto===undefined)rec._wAuto=!rec.tbm_w;
@@ -462,6 +463,8 @@ $("sf").addEventListener("change",function(){rec.sfs=[].slice.call($("sf").query
 $("ph").onchange=function(){var f=this.files[0];if(!f)return;resize(f,function(u){photo=u;showPhoto();dirty=true;saveNow()})};
 $("carry").onclick=function(){var p=prevData[0];if(!p){alert("불러올 전일 일지가 없습니다.");return}
  DIV.forEach(function(d){var v=p["n_"+d[0]];if(v)document.querySelector('[data-k="t_'+d[0]+'"]').value=v});autoWork();applyTypes();touch()};
+function alSync(){NAMES.forEach(function(n,i){var a=document.querySelector('[data-k="as'+i+'"]');if(!a)return;var on=!!a.value;[document.querySelector('[data-k="a'+i+'"]'),document.querySelector('[data-k="at'+i+'"]')].forEach(function(e){if(e)e.disabled=on});var b=document.querySelector('.clk[data-t="at'+i+'"]');if(b)b.disabled=on})}
+$("al").addEventListener("change",function(e){if(e.target.classList.contains("ast"))alSync()});
 $("al").addEventListener("click",function(e){var b=e.target.closest(".clk");if(!b)return;var el=document.querySelector('[data-k="'+b.dataset.t+'"]');el.value=hhmm();touch()});
 $("cfgsave").onclick=async function(){var p=lines($("cfgp").value),t=lines($("cfgs").value);
  if(!p.length||!t.length){$("cfgmsg").textContent="각 목록에 항목이 1개 이상 있어야 합니다.";return}
@@ -479,7 +482,7 @@ $("dbox").addEventListener("click",async function(e){var b=e.target.closest("but
  if(b.id==="ddone"){delete rec._draft;dirty=true;await saveNow();await refreshDrafts()}
  else if(b.classList.contains("dopen")){gotoDate(b.dataset.d)}});
 $("cbox").addEventListener("click",async function(e){if(e.target.id==="creload"){var d=cur;conflict=false;dirty=false;await load(d)}});
-$("clr").onclick=async function(){if(!confirm("오늘 입력한 내용을 모두 지울까요?"))return;
+$("clr").onclick=async function(){if(!confirm(cur+" 일지에 입력·저장된 내용(사진 포함)을 모두 지웁니다.\n지운 뒤에는 되돌릴 수 없습니다. 계속할까요?"))return;
  rec={};photo=null;conflict=false;$("cbox").style.display="none";fillFields();dirty=true;await saveNow()};
 $("dl").onclick=async function(){
  await flush();collect();
