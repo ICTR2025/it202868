@@ -69,7 +69,8 @@ details.card summary{cursor:pointer}
 </div>
 
 <div class="wrap" id="app" style="display:none">
-<div class="row noprint" style="justify-content:space-between"><h1>일일업무일지 작성 도우미</h1><div class="row"><span id="st" class="note"></span><button class="g" id="clr" type="button" style="color:#c62828;border-color:#c62828">모두 삭제</button><button class="g" id="lgout" type="button">로그아웃</button></div></div>
+<div class="row noprint" style="justify-content:space-between"><h1>일일업무일지 작성 도우미</h1><div class="row"><span id="st" class="note"></span><button class="g" id="clr" type="button" style="color:#c62828;border-color:#c62828">모두 삭제</button><button class="g" id="bk" type="button">월 백업</button><button class="g" id="lgout" type="button">로그아웃</button></div></div>
+<div class="card noprint" id="bkbox" style="display:none"><b>월별 인쇄용 파일 저장</b><div class="note">‘인쇄용 파일(한 달)’은 선택한 달의 일지를 하루 한 장씩 이어 붙인 파일 하나로 저장합니다. 파일을 열면 인쇄 창이 뜨며 ‘PDF로 저장’을 선택하면 됩니다.</div><div class="row"><input type="month" id="bkm" style="width:auto"><button type="button" id="bkpdf">인쇄용 파일(한 달) 저장</button><button type="button" class="g" id="bkx">닫기</button><span class="note" id="bkmsg"></span></div></div>
 <div class="sub noprint">입력한 내용은 자동으로 서버에 저장되어 다른 컴퓨터에서도 같은 내용이 보입니다. 작성이 끝나면 맨 아래 ‘인쇄용 파일 저장’을 누르세요.</div>
 
 <div class="card noprint" id="cbox" style="display:none"></div>
@@ -206,12 +207,13 @@ function br(s){
   var sp=l.match(/^[ \t　]*/)[0].length,body=l.slice(sp),m=body.match(/^([-·•*ㆍ○※◦▪▶]|\d+[.)]|[가-힣][.)]|\(\d+\))\s+/),
    lead=sp?Math.min(sp,8)*0.5:0,mk=m?(m[0].length>2?1.4:1):0;
   return'<div class="hp" style="padding-left:'+(lead+mk)+'em;text-indent:-'+mk+'em">'+(lead?"":"")+esc(body)+'</div>'}).join("")}
-function q(k){var e=document.querySelector('[data-k="'+k+'"]');return e?e.value:""}
-function buildDoc(){
- collect();
- var P=function(k){return esc(q("p_"+k))},C=function(k){return esc(q("c_"+k))},U=function(k){return $("u_"+k).textContent};
+var QO=null;
+function q(k){if(QO){if(k in QO&&QO[k]!=null)return String(QO[k]);var f=document.querySelector('[data-k="'+k+'"]');return f?f.defaultValue:""}var e=document.querySelector('[data-k="'+k+'"]');return e?e.value:""}
+function buildDoc(){collect();return wrapDoc([pageHtml()],cur)}
+function pageHtml(){
+ var P=function(k){return esc(q("p_"+k))},C=function(k){return esc(q("c_"+k))},U=function(k){var p=q("p_"+k),c=q("c_"+k);return(p!==""&&c!=="")?String(Number(c)-Number(p)):""};
  var dt=new Date(cur+"T00:00:00");
- var dstr=dt.getFullYear()+"년 "+(dt.getMonth()+1)+"월 "+dt.getDate()+"일 "+$("dow").textContent;
+ var dstr=dt.getFullYear()+"년 "+(dt.getMonth()+1)+"월 "+dt.getDate()+"일 "+["일","월","화","수","목","금","토"][dt.getDay()]+"요일";
  var mc=function(k){return'<td class="n">'+P(k)+'</td><td class="n">'+C(k)+'</td><td class="n">'+U(k)+'</td>'};
  var dirs=(rec.dir||[]).map(function(t){return"- "+esc(t)}).join("<br>");
  var sf=br((rec.sfs||[]).map(function(t){return"- "+t}).join("\n"));
@@ -238,8 +240,12 @@ function buildDoc(){
  A+='</tr>';
  for(var r=0;r<4;r++){A+='<tr>';for(c=0;c<4;c++){var i=r*4+c,nm=NAMES[i],st=q("as"+i);A+='<td>'+nm+'</td>'+(EXEMPT[nm]?'<td colspan="2">'+EXEMPT[nm]+'</td>':st?'<td>'+esc(st)+'</td><td></td>':'<td>'+esc(q("a"+i))+'</td><td>'+esc(q("at"+i))+'</td>')}A+='</tr>'}
  var K='<table class="t g13"><colgroup><col style="width:62px">'+new Array(13).join('<col>')+'</colgroup><tr><td colspan="13" class="bar">기타 사항</td></tr><tr><th>구 분</th><th colspan="7">금 일 업 무 내 용</th><th colspan="5">익 일 업 무 계 획</th></tr>'+rows+'<tr><td class="b">음주검사<br>시행자</td><td colspan="12" class="l">- '+esc(CHECKERS)+'</td></tr>'+A+'</table>';
- var css=':root{--o:1.6pt;--m:1.2pt;--i:.5pt}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.sg{table-layout:fixed}.sg th,.sg td{width:33.333%}.ph{position:relative;padding:0!important}.ph img{position:absolute;left:0;top:0;width:100%;height:100%;max-width:none;max-height:none;object-fit:cover;display:block}.hp{margin:0}.mv{white-space:nowrap;padding:2px 0!important;font-size:8.5px!important;letter-spacing:-.3px}@page{size:A4;margin:8mm}body{width:192mm;margin:0;font:10.3px/1.35 "돋움",Dotum,"Malgun Gothic",sans-serif;color:#000}table{border-collapse:collapse;width:100%}.t{margin-top:5px;border:var(--o) solid #000}th,td{border:var(--i) solid #000;padding:2px 4px;text-align:center;vertical-align:middle}th{background:#e8e8e8;font-weight:700}.e3 th,td.d{border:var(--m) solid #000}.l{text-align:left}.n{text-align:right}.hd{margin:0}.hd>tbody>tr>td{border:0;padding:0}.tt{font-size:28px;font-weight:900;letter-spacing:.3em;text-align:left}.sg{width:230px;margin:0 0 0 auto}.sg td{height:42px}td.bar{text-align:left;padding:2px 6px;font-weight:700;font-size:12px}.g13{table-layout:fixed}.g13 th{font-size:9.5px}.d,.x{vertical-align:top}.k td,.k th{height:30px}.e3 td,.e3 th{height:28px}.b{font-weight:700}.b2{font-weight:900;font-size:12px;-webkit-text-stroke:.35px #000}.w2{width:62px}.lb{white-space:nowrap;letter-spacing:-.6px}tr.h td{height:36px}';
- return'<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>일일업무일지 '+cur+'</title><style>'+css+'</style></head><body>'+H+I+E+T+K+'<script>onload=function(){var b=document.body,lim=1050,z=1;while(z>0.45){b.style.width=(192/z)+"mm";b.style.zoom=z;var r=document.documentElement.style;r.setProperty("--o",(1.6/z)+"pt");r.setProperty("--m",(1.2/z)+"pt");r.setProperty("--i",(.5/z)+"pt");if(b.offsetHeight*z<=lim)break;z-=0.01}setTimeout(function(){print()},400)}<\/script></body></html>';
+ return H+I+E+T+K;
+}
+function wrapDoc(pages,title){
+ var css='.pg{break-after:page;page-break-after:always}.pg:last-child{break-after:auto;page-break-after:auto}:root{--o:1.6pt;--m:1.2pt;--i:.5pt}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.sg{table-layout:fixed}.sg th,.sg td{width:33.333%}.ph{position:relative;padding:0!important}.ph img{position:absolute;left:0;top:0;width:100%;height:100%;max-width:none;max-height:none;object-fit:cover;display:block}.hp{margin:0}.mv{white-space:nowrap;padding:2px 0!important;font-size:8.5px!important;letter-spacing:-.3px}@page{size:A4;margin:8mm}body{width:192mm;margin:0;font:10.3px/1.35 "돋움",Dotum,"Malgun Gothic",sans-serif;color:#000}table{border-collapse:collapse;width:100%}.t{margin-top:5px;border:var(--o) solid #000}th,td{border:var(--i) solid #000;padding:2px 4px;text-align:center;vertical-align:middle}th{background:#e8e8e8;font-weight:700}.e3 th,td.d{border:var(--m) solid #000}.l{text-align:left}.n{text-align:right}.hd{margin:0}.hd>tbody>tr>td{border:0;padding:0}.tt{font-size:28px;font-weight:900;letter-spacing:.3em;text-align:left}.sg{width:230px;margin:0 0 0 auto}.sg td{height:42px}td.bar{text-align:left;padding:2px 6px;font-weight:700;font-size:12px}.g13{table-layout:fixed}.g13 th{font-size:9.5px}.d,.x{vertical-align:top}.k td,.k th{height:30px}.e3 td,.e3 th{height:28px}.b{font-weight:700}.b2{font-weight:900;font-size:12px;-webkit-text-stroke:.35px #000}.w2{width:62px}.lb{white-space:nowrap;letter-spacing:-.6px}tr.h td{height:36px}';
+
+ return'<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+css+'</style></head><body>'+pages.map(function(h){return'<div class="pg">'+h+'</div>'}).join("")+'<script>onload=function(){var lim=1050;[].forEach.call(document.querySelectorAll(".pg"),function(b){var z=1;while(z>0.45){b.style.width=(192/z)+"mm";b.style.zoom=z;var r=b.style;r.setProperty("--o",(1.6/z)+"pt");r.setProperty("--m",(1.2/z)+"pt");r.setProperty("--i",(.5/z)+"pt");if(b.offsetHeight*z<=lim)break;z-=0.01}});setTimeout(function(){print()},400)}<\/script></body></html>';
 }
 
 
@@ -460,6 +466,27 @@ $("cfgdef").onclick=function(){$("cfgp").value=POOL_DEF.join("\n");$("cfgs").val
 $("cbox").addEventListener("click",async function(e){if(e.target.id==="creload"){var d=cur;conflict=false;dirty=false;await load(d)}});
 $("clr").onclick=async function(){if(!confirm(cur+" 일지에 입력·저장된 내용(사진 포함)을 모두 지웁니다.\n지운 뒤에는 되돌릴 수 없습니다. 계속할까요?"))return;
  rec={};photo=null;conflict=false;$("cbox").style.display="none";fillFields();dirty=true;await saveNow()};
+$("bk").onclick=function(){var b=$("bkbox");b.style.display=b.style.display==="none"?"block":"none";if(!$("bkm").value)$("bkm").value=cur.slice(0,7);$("bkmsg").textContent=""};
+$("bkx").onclick=function(){$("bkbox").style.display="none"};
+$("bkpdf").onclick=async function(){
+ var m=$("bkm").value,msg=$("bkmsg");if(!/^\d{4}-\d{2}$/.test(m)){msg.textContent="월을 선택해 주세요.";return}
+ msg.textContent="만드는 중…";
+ var sv={cur:cur,rec:rec,photo:photo};
+ try{await flush();
+  var y=+m.slice(0,4),mo=+m.slice(5),nx=mo===12?(y+1)+"-01-01":y+"-"+("0"+(mo+1)).slice(-2)+"-01";
+  var r=await sb.from("logs").select("log_date,data,photo").gte("log_date",m+"-01").lt("log_date",nx).order("log_date",{ascending:true});
+  if(r.error)throw r.error;
+  var rows=r.data||[];if(!rows.length){msg.textContent=m+" 에 저장된 일지가 없습니다.";return}
+  var pages=[];
+  rows.forEach(function(x){cur=x.log_date;rec=x.data||{};photo=x.photo||null;QO=rec;
+   if(!rec.sfs)rec.sfs=SAFE.slice(0,3);if(!rec.dir)rec.dir=(rec.custom||[]).concat(rec.rnd||[]);pages.push(pageHtml())});
+  QO=null;cur=sv.cur;rec=sv.rec;photo=sv.photo;
+  var url=URL.createObjectURL(new Blob([wrapDoc(pages,"일일업무일지 "+m)],{type:"text/html"})),a=document.createElement("a");
+  a.href=url;a.download="일일업무일지_"+m+".html";document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(url)},3000);
+  msg.textContent=rows.length+"일치를 저장했습니다. 파일을 열어 PDF로 저장하세요."}
+ catch(e){msg.textContent="실패: "+errMsg(e)}
+ finally{QO=null;cur=sv.cur;rec=sv.rec;photo=sv.photo}};
 $("dl").onclick=async function(){
  await flush();collect();
  var url=URL.createObjectURL(new Blob([buildDoc()],{type:"text/html"})),a=document.createElement("a");
