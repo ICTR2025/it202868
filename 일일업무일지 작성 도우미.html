@@ -1,0 +1,217 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>일일업무일지 작성 도우미</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--tx:#1d2733;--mu:#667085;--bd:#cfd6df;--ac:#1f5fbf;--hd:#e8eef8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14181d;--card:#1d232b;--tx:#e7ebf0;--mu:#9aa5b1;--bd:#3a4452;--ac:#6ea3f2;--hd:#25303f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14181d;--card:#1d232b;--tx:#e7ebf0;--mu:#9aa5b1;--bd:#3a4452;--ac:#6ea3f2;--hd:#25303f;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 "돋움",Dotum,"Malgun Gothic",sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:14px}
+h1{font-size:20px;margin:6px 0 2px}
+.sub{color:var(--mu);font-size:13px;margin-bottom:10px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px;margin:12px 0}
+h2{font-size:15px;margin:0 0 8px;color:var(--ac)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0}
+label{font-size:13px;color:var(--mu)}
+input,textarea,select{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;max-width:100%}
+textarea{width:100%;min-height:76px;resize:vertical}
+input[type=number]{width:96px;text-align:right}
+input[readonly]{opacity:.75}
+.sm{width:80px}
+button,.btn{font:inherit;background:var(--ac);color:#fff;border:0;border-radius:6px;padding:7px 12px;cursor:pointer;text-decoration:none;display:inline-block}
+button.g,.btn.g{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ov{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid var(--bd);padding:4px 6px;text-align:center}
+th{background:var(--hd)}
+td.l{text-align:left}
+.u{font-weight:600}
+.dir li{margin:3px 0}
+.chk label{display:block;color:var(--tx);font-size:14px}
+#pv{max-width:100%;max-height:220px;border-radius:6px;display:none;margin-top:6px}
+.al{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:6px}
+.al div{border:1px solid var(--bd);border-radius:6px;padding:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.al b{min-width:54px}
+.note{font-size:12px;color:var(--mu)}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+.sig{display:none}
+@media print{.sig{display:table;width:260px;margin:0 0 8px auto}.sig td{height:46px}.chk label:has(input:not(:checked)){display:none}.chk input{display:none}.chk label:before{content:"- "}.emp{display:none!important}}
+@media print{
+ body{background:#fff;color:#000;font-size:12px}.noprint{display:none!important}
+ .card{border:1px solid #000;border-radius:0;margin:4px 0;padding:6px;break-inside:avoid}
+ input,textarea{border:0;background:transparent;color:#000;padding:0}textarea{min-height:0}
+ h2{color:#000}th{background:#eee}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>일일업무일지 작성 도우미</h1>
+<div class="sub noprint">입력한 내용은 이 브라우저에 자동 저장됩니다. 작성이 끝나면 맨 아래 ‘인쇄용 파일 저장’을 누르세요.</div>
+
+<div class="card">
+ <table class="sig"><tr><th>작성자</th><th>담당자</th><th>팀장</th></tr><tr><td></td><td></td><td></td></tr></table>
+ <div class="row"><label>일자</label><input type="date" id="date"><span id="dow" class="u"></span></div>
+ <div class="row"><label>날씨</label><label>최저</label><input type="number" class="sm" data-k="tmin" placeholder="℃"><label>최고</label><input type="number" class="sm" data-k="tmax" placeholder="℃"><label>습도</label><input type="number" class="sm" data-k="hum" placeholder="%">
+ <a class="btn g noprint" href="https://www.weather.go.kr/w/index.do" target="_blank" rel="noopener">기상청 확인</a></div>
+ <div class="note noprint">※ 발행된 페이지는 기상청 서버에 직접 접속할 수 없어, 기상청에서 확인한 값을 입력하는 방식입니다.</div>
+ <div class="row"><label>출결사항 결근</label><input type="number" class="sm" min="0" value="0" data-k="abs"><label>명</label></div>
+ <div class="row"><label>특기사항</label><input data-k="spec" style="flex:1;min-width:200px"></div>
+</div>
+
+<div class="card"><h2>에너지 사용량 검침</h2>
+ <div class="note noprint">전일 지침은 직전에 저장한 일지의 금일 지침이 자동으로 들어갑니다. 처음 사용하는 날에는 직접 입력하세요.</div>
+ <div class="grid2">
+  <div class="ov"><table><thead><tr><th>가스(Nm³)</th><th>전일</th><th>금일</th><th>사용량</th></tr></thead><tbody id="gas"></tbody></table></div>
+  <div class="ov"><table><thead><tr><th>수도(㎥)</th><th>전일</th><th>금일</th><th>사용량</th></tr></thead><tbody id="wat"></tbody></table></div>
+ </div>
+</div>
+
+<div class="card"><h2>관리감독자 안전작업 지시사항</h2>
+ <div class="note noprint">4개가 랜덤으로 선택되며, 체크를 바꿔 원하는 항목으로 조정할 수 있습니다. 인쇄 시 체크한 항목만 출력됩니다.</div>
+ <div class="chk" id="dir"></div>
+ <button class="g noprint" id="shuf">다시 뽑기</button>
+</div>
+
+<div class="card"><h2>금일 점검</h2>
+ <div class="ov"><table><thead><tr><th>구분</th><th>기계</th><th>전기</th><th>소방</th><th>환경</th><th>건축·조경</th></tr></thead><tbody id="chk"></tbody></table></div>
+</div>
+
+<div class="card"><h2>작업 전 안전소통회의(TBM)</h2>
+ <div class="row"><label>시간</label><input data-k="tbm_t" value="09:00~09:10 / 13:00~13:10" style="flex:1;min-width:200px"></div>
+ <div class="row"><label>참여</label><input data-k="tbm_p" placeholder="예: 정명진 외 10명" style="flex:1;min-width:200px"></div>
+ <div class="row"><label>TBM 리더</label><input data-k="tbm_l" style="flex:1;min-width:200px"></div>
+ <div class="row"><label>작업공정</label><input data-k="tbm_w" style="flex:1;min-width:200px"></div>
+ <label>안전조치 (선택한 항목이 자동 입력됩니다)</label>
+ <div class="chk" id="sf"></div>
+ <label>환류</label><textarea data-k="tbm_f" style="min-height:56px"></textarea>
+ <div class="row noprint"><label>TBM 사진</label><input type="file" id="ph" accept="image/*"></div>
+ <img id="pv" alt="TBM 사진">
+</div>
+
+<div class="card"><h2>기타 사항</h2>
+ <div class="noprint row"><button class="g" id="carry">전일 일지의 익일 계획 불러오기</button></div>
+ <div class="opt" style="margin:8px 0"><b>금일 업무내용 (공통)</b><div class="note noprint">분야 구분 없이 적는 내용입니다. 인쇄 시 ‘금일 업무내용’으로 출력됩니다.</div><textarea data-k="t_common"></textarea></div>
+ 
+ <div id="div"></div>
+</div>
+
+<div class="card"><h2>음주 측정</h2>
+ <div class="row"><label>음주검사 시행자</label><b id="chker"></b></div>
+ <div class="al" id="al"></div>
+</div>
+
+<div class="row noprint"><button id="dl">인쇄용 파일 저장</button><div class="note" style="flex-basis:100%">※ ‘인쇄용 파일 저장’을 누르면 일일업무일지 양식의 파일이 저장됩니다. 파일을 열면 인쇄 창이 뜨며, 프린터 대신 ‘PDF로 저장’을 선택할 수도 있습니다.</div><button class="g" id="clr">오늘 입력 초기화</button></div>
+</div>
+
+<script>
+var CHECKERS="안한전, 이태금";
+var GAS=[["g1","관리동냉온수기"],["g2","검사고냉온수기"],["g3","연관보일러"],["g4","검사고보일러"],["g5","식당"]];
+var WAT=[["w1","시수(대)"],["w2","시수(소)"],["w3","시수(굴현)"],["w4","연관보일러 1"],["w5","연관보일러 2"],["w6","검사고"],["w7","옥외세척고"],["w8","정수"]];
+var POOL=["작업안전수칙 낭독","근골격계 예방 체조 실시","작업장 통로 확보로 위험요인 제거","기계·기구, 설비의 안전보건 점검","작업 전 보호구 착용 상태 확인","고소작업 시 안전대 착용 및 추락 방지","전기 작업 전 전원 차단 및 잠금·표지 부착","화기작업 전 소화기 비치 및 주변 가연물 제거","밀폐공간 작업 전 산소·유해가스 농도 측정","중량물 취급 시 2인 1조 작업 및 올바른 자세","작업 중 휴대전화 사용 금지 및 주변 확인","작업 종료 후 정리정돈 및 잔여 위험요인 확인","미끄럼 위험 구간 안내 및 신속한 제거","차량·장비 이동 시 신호수 배치 및 유도"];
+var SAFE=["금일 작업별 유해·위험요인 파악 및 안전관리 대책과 실천사항 공유","안전보호구 착용 및 안전구호 “함께 지키는 안전, 함께 만드는 신뢰” 제창","국민체조 실시(근골격 예방) 등","작업 전 설비 전원 차단 및 잠금장치 확인","작업장 주변 정리정돈 및 통로 확보","고소작업 시 안전대 착용 및 추락 방지 조치 확인"];
+var DIV=[["m","기 계"],["e","전 기"],["f","소 방"],["v","환 경"],["c","조경·건축"],["b","방 재 실"]];
+var CHK=[["일일/주간"],["월간이상"],["기타"]];
+var CB=["lm","le","lf","lv","lc"];
+var NAMES=["이근수","유성재","이이규","노성주","김종원","위치준","정용기","송대성","이경탁","남상준","김대우","최철훈","정명진","전면우","정일서","우제열"];
+var $=function(i){return document.getElementById(i)};
+var S={get:function(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+var cur="",rec={};
+
+function iso(d){var m=("0"+(d.getMonth()+1)).slice(-2),dd=("0"+d.getDate()).slice(-2);return d.getFullYear()+"-"+m+"-"+dd}
+function build(){
+ var h="";GAS.forEach(function(g){h+='<tr><td class="l">'+g[1]+'</td><td><input type="number" class="p" data-k="p_'+g[0]+'" data-m="'+g[0]+'"></td><td><input type="number" data-k="c_'+g[0]+'" data-m="'+g[0]+'" class="c"></td><td class="u" id="u_'+g[0]+'"></td></tr>'});$("gas").innerHTML=h;
+ h="";WAT.forEach(function(g){h+='<tr><td class="l">'+g[1]+'</td><td><input type="number" class="p" data-k="p_'+g[0]+'" data-m="'+g[0]+'"></td><td><input type="number" data-k="c_'+g[0]+'" data-m="'+g[0]+'" class="c"></td><td class="u" id="u_'+g[0]+'"></td></tr>'});$("wat").innerHTML=h;
+ h="";CHK.forEach(function(r){h+='<tr><td>'+r[0]+'</td>';CB.forEach(function(c,i){h+='<td><input type="number" class="sm" style="width:56px" value="'+(r[0]=="일일/주간"?0:"")+'" data-k="'+c+i+r[0]+'"></td>'.replace(c+i+r[0],c+"_"+CHK.indexOf(r))});h+='</tr>'});$("chk").innerHTML=h;
+ h="";SAFE.forEach(function(s,i){h+='<label><input type="checkbox" data-k="sf'+i+'"'+(i<3?" checked":"")+'> '+s+'</label>'});$("sf").innerHTML=h;
+ h="";DIV.forEach(function(d){h+='<div style="margin:8px 0"><b>'+d[1]+'</b><div class="grid2"><div><label>금일 업무내용</label><textarea data-k="t_'+d[0]+'"></textarea></div><div><label>익일 업무계획</label><textarea data-k="n_'+d[0]+'"></textarea></div></div></div>'});$("div").innerHTML=h;
+ h="";NAMES.forEach(function(n,i){h+='<div><b>'+n+'</b><input type="number" step="0.01" min="0" class="sm" value="0.00" data-k="a'+i+'"><input type="time" data-k="at'+i+'"></div>'});$("al").innerHTML=h;
+ $("chker").textContent=CHECKERS;
+}
+function fields(){return document.querySelectorAll("[data-k]")}
+function collect(){var o=rec;fields().forEach(function(e){o[e.dataset.k]=e.type==="checkbox"?e.checked:e.value});return o}
+function save(){if(!cur)return;collect();S.set("log:"+cur,rec)}
+function prevRecs(date){return Object.keys(localStorage).filter(function(k){return k.indexOf("log:2")===0&&k<"log:"+date}).sort().reverse().map(function(k){return S.get(k)||{}})}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function showDir(){$("dir").innerHTML=POOL.map(function(t,i){return'<label><input type="checkbox" data-i="'+i+'"'+((rec.dir||[]).indexOf(t)>-1?" checked":"")+'> '+t+'</label>'}).join("")}
+function calc(){GAS.concat(WAT).forEach(function(g){var p=document.querySelector('[data-k="p_'+g[0]+'"]').value,c=document.querySelector('[data-k="c_'+g[0]+'"]').value;$("u_"+g[0]).textContent=(p!==""&&c!=="")?(Number(c)-Number(p)):""})}
+function showPhoto(){var im=$("pv");if(rec.photo){im.src=rec.photo;im.style.display="block"}else{im.removeAttribute("src");im.style.display="none"}}
+function load(date){
+ cur=date;rec=S.get("log:"+date)||{};
+ var s=S.get("log:settings")||{};
+ fields().forEach(function(e){var k=e.dataset.k,d=e.type==="checkbox"?e.defaultChecked:e.defaultValue;
+  if(k in rec){if(e.type==="checkbox")e.checked=rec[k];else e.value=rec[k]}else if(["who","mgr","lead"].indexOf(k)>-1&&s[k]){e.value=s[k]}else{if(e.type==="checkbox")e.checked=d;else e.value=d}
+  e.readOnly=false});
+ var pv=prevRecs(date);
+ GAS.concat(WAT).forEach(function(g){var f=null;for(var i=0;i<pv.length;i++){if(pv[i]["c_"+g[0]]){f=pv[i]["c_"+g[0]];break}}
+  var el=document.querySelector('[data-k="p_'+g[0]+'"]');if(f!==null){el.value=f;el.readOnly=true}});
+ if(!rec.dir){rec.dir=shuffle(POOL).slice(0,4)}
+ var d=new Date(date+"T00:00:00");$("dow").textContent=["일","월","화","수","목","금","토"][d.getDay()]+"요일";
+ showDir();showPhoto();calc();save();
+}
+function resize(file,cb){var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){var m=900,s=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=im.width*s;c.height=im.height*s;c.getContext("2d").drawImage(im,0,0,c.width,c.height);cb(c.toDataURL("image/jpeg",.7))};im.src=r.result};r.readAsDataURL(file)}
+
+build();
+$("date").value=iso(new Date());
+load($("date").value);
+$("date").addEventListener("change",function(){if($("date").value){save();load($("date").value)}});
+document.addEventListener("input",function(e){if(!e.target.dataset||!e.target.dataset.k)return;calc();save();
+ if(["who","mgr","lead"].indexOf(e.target.dataset.k)>-1){var s=S.get("log:settings")||{};s[e.target.dataset.k]=e.target.value;S.set("log:settings",s)}});
+document.addEventListener("change",function(e){if(e.target.dataset&&e.target.dataset.k)save()});
+$("shuf").onclick=function(){rec.dir=shuffle(POOL).slice(0,4);showDir();save()};
+$("dir").addEventListener("change",function(){rec.dir=[].slice.call($("dir").querySelectorAll("input:checked")).map(function(e){return POOL[e.dataset.i]});save()});
+$("ph").onchange=function(){var f=this.files[0];if(!f)return;resize(f,function(u){rec.photo=u;showPhoto();if(!S.set("log:"+cur,rec))alert("저장 공간이 부족해 사진이 저장되지 않았습니다. 이전 일지를 정리해 주세요.")})};
+$("carry").onclick=function(){var p=prevRecs(cur)[0];if(!p){alert("불러올 전일 일지가 없습니다.");return}
+ DIV.forEach(function(d){var v=p["n_"+d[0]];if(v)document.querySelector('[data-k="t_'+d[0]+'"]').value=v});save()};
+function esc(s){return String(s||"").replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
+function br(s){return esc(s).replace(/\n/g,"<br>")}
+function q(k){var e=document.querySelector('[data-k="'+k+'"]');return e?e.value:""}
+function buildDoc(){
+ collect();
+ var P=function(k){return esc(q("p_"+k))},C=function(k){return esc(q("c_"+k))},U=function(k){return $("u_"+k).textContent};
+ var dt=new Date(cur+"T00:00:00");
+ var dstr=dt.getFullYear()+"년 "+(dt.getMonth()+1)+"월 "+dt.getDate()+"일 "+$("dow").textContent;
+ var mc=function(k){return'<td class="n">'+P(k)+'</td><td class="n">'+C(k)+'</td><td class="n">'+U(k)+'</td>'};
+ var dirs=(rec.dir||[]).map(function(t){return"- "+esc(t)}).join("<br>");
+ var sf=SAFE.filter(function(s,i){return document.querySelector('[data-k="sf'+i+'"]').checked}).map(function(t){return"- "+esc(t)}).join("<br>");
+ var H='<table class="hd"><tr><td class="tt">일 일 업 무 일 지</td><td><table class="t sg"><tr><th>작성자</th><th>담당자</th><th>팀 장</th></tr><tr><td></td><td></td><td></td></tr></table></td></tr></table>';
+ var I='<table class="t"><tr><th class="b2 w2">일 자</th><td class="b2">'+dstr+'</td><th class="b2 w2">날 씨</th><td class="b2">온도 (최저 '+esc(q("tmin"))+'℃ 최고 '+esc(q("tmax"))+'℃) 습도 '+esc(q("hum"))+'%</td></tr><tr><th class="b2">출결사항</th><td class="b2">결근 '+esc(q("abs"))+' 명</td><th class="b2">특기사항</th><td class="l">'+esc(q("spec"))+'</td></tr></table>';
+ var E='<div class="bar">에너지사용량 검침</div><table class="t t0"><tr><th rowspan="2" style="width:104px">항목</th><th colspan="3">가스(Nm³)</th><th rowspan="2" colspan="2" class="w2">항목</th><th colspan="3">수도(㎥)</th></tr><tr><th>전일지침</th><th>금일지침</th><th>사용량</th><th>전일지침</th><th>금일지침</th><th>사용량</th></tr>';
+ E+='<tr><td class="l lb">관리동냉온수기</td>'+mc("g1")+'<td colspan="2" class="l">시수(대)</td>'+mc("w1")+'</tr>';
+ E+='<tr><td class="l lb">검사고냉온수기</td>'+mc("g2")+'<td colspan="2" class="l">시수(소)</td>'+mc("w2")+'</tr>';
+ E+='<tr><td class="l lb">연관보일러</td>'+mc("g3")+'<td colspan="2" class="l">시수(굴현)</td>'+mc("w3")+'</tr>';
+ E+='<tr><td class="l lb">검사고보일러</td>'+mc("g4")+'<td rowspan="2">연관보일러</td><td>1</td>'+mc("w4")+'</tr>';
+ E+='<tr><td class="l">식 &nbsp; &nbsp; 당</td>'+mc("g5")+'<td>2</td>'+mc("w5")+'</tr>';
+ E+='<tr class="e3"><th colspan="4">관리감독자 안전작업 지시사항</th><td colspan="2" class="l">검사고</td>'+mc("w6")+'</tr>';
+ E+='<tr class="e3"><td colspan="4" rowspan="2" class="l d">'+dirs+'</td><td colspan="2" class="l">옥외세척고</td>'+mc("w7")+'</tr>';
+ E+='<tr class="e3"><td colspan="2" class="l">정수</td>'+mc("w8")+'</tr></table>';
+ var ck=CHK.map(function(r){return'<tr class="k"><td>'+r[0]+'</td>'+CB.map(function(c,i){return'<td>'+esc(q(c+i+r[0]))+'</td>'}).join('')+'</tr>'}).join('');
+ var T='<table class="t"><tr><th colspan="6" style="width:38%">금일 점검</th><th>작업 전, 안전소통회의(TBM)</th><th style="width:26%">사 진</th></tr><tr><th style="width:58px">구 분</th><th>기계</th><th>전기</th><th>소방</th><th>환경</th><th>건축<br>조경</th><td rowspan="4" class="l x">◦ 시 간 : '+esc(q("tbm_t"))+'<br>◦ 참 여 : '+esc(q("tbm_p"))+'<br>◦ TBM 리더 : '+esc(q("tbm_l"))+'<br>◦ 작업공정 : '+esc(q("tbm_w"))+'<br>◦ <b>안전조치</b><br>'+sf+(q("tbm_f").trim()?'<br>◦ <b>환류</b><br>'+br(q("tbm_f")):'')+'</td><td rowspan="4" class="x">'+(rec.photo?'<img src="'+rec.photo+'" alt="">':'')+'</td></tr>'+ck+'</table>';
+ var common=q("t_common").trim();
+ var extra=DIV.filter(function(d){return q("t_"+d[0]).trim()}).map(function(d){return"["+d[1]+"] "+q("t_"+d[0])}).join("\n");
+ var merged=br(common+(extra?"\n"+extra:""));
+ var rows=DIV.map(function(d,i){var a='<td class="l">'+br(q("t_"+d[0]))+'</td>';
+  if(common)a=(i===0)?'<td class="l" rowspan="'+DIV.length+'">'+merged+'</td>':'';
+  return'<tr class="h"><td class="b">'+d[1]+'</td>'+a+'<td class="l">'+br(q("n_"+d[0]))+'</td></tr>'}).join("");
+ var K='<div class="bar">기타 사항</div><table class="t t0"><tr><th class="w2">구 분</th><th>금 일 업 무 내 용</th><th style="width:41%">익 일 업 무 계 획</th></tr>'+rows+'<tr><td class="b">음주검사<br>시행자</td><td colspan="2" class="l">- '+esc(CHECKERS)+'</td></tr></table>';
+ var A='<table class="t t0"><tr><td rowspan="5" class="b w2">음주측정<br>대상자</td>';
+ for(var c=0;c<4;c++)A+='<th>성 명</th><th>측정수치(%)</th><th>시간</th>';
+ A+='</tr>';
+ for(var r=0;r<4;r++){A+='<tr>';for(c=0;c<4;c++){var i=r*4+c;A+='<td>'+NAMES[i]+'</td><td>'+esc(q("a"+i))+'</td><td>'+esc(q("at"+i))+'</td>'}A+='</tr>'}
+ A+='</table>';
+ var css='@page{size:A4;margin:8mm}body{width:192mm;margin:0;font:10.3px/1.35 "돋움",Dotum,"Malgun Gothic",sans-serif;color:#000}table{border-collapse:collapse;width:100%}.t{margin-top:5px}.t0{margin-top:-1px}th,td{border:1px solid #000;padding:2px 4px;text-align:center;vertical-align:middle}th{background:#eee;font-weight:700}.l{text-align:left}.n{text-align:right}.hd{margin:0}.hd>tbody>tr>td{border:0;padding:0}.tt{font-size:28px;font-weight:900;letter-spacing:.3em;text-align:left}.sg{width:230px;margin:0 0 0 auto}.sg td{height:48px}.bar{border:1px solid #000;padding:2px 6px;font-weight:700;font-size:12px;margin-top:5px}.d,.x{vertical-align:top}.x{height:110px}.k td{height:24px}.e3 td,.e3 th{height:30px}.b{font-weight:700}.b2{font-weight:700;font-size:12px}.w2{width:62px}.lb{white-space:nowrap;letter-spacing:-.6px}tr.h td{height:42px}img{max-width:100%;max-height:120px}';
+ return'<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>일일업무일지 '+cur+'</title><style>'+css+'</style></head><body>'+H+I+E+T+K+A+'<script>onload=function(){setTimeout(function(){print()},400)}<\/script></body></html>';
+}
+$("dl").onclick=async function(){try{var d=window.claude&&await window.claude.use("downloads");if(!d){alert("이 화면에서는 파일 저장을 사용할 수 없습니다.");return}save();await d.save({filename:"일일업무일지_"+cur+".html",data:new Blob([buildDoc()],{type:"text/html"})})}catch(e){if(!e||e.code!=="declined")alert("저장하지 못했습니다. ("+(e&&e.code?e.code:"오류")+")")}};
+$("clr").onclick=function(){if(confirm("오늘 입력한 내용을 모두 지울까요?")){try{localStorage.removeItem("log:"+cur)}catch(e){}load(cur)}};
+</script>
+</body>
+</html>
+
+</body></html>
