@@ -133,6 +133,11 @@ details.card summary{cursor:pointer}
  <textarea id="cfgs" style="min-height:130px"></textarea>
  <div class="row"><button id="cfgsave">목록 저장</button><button type="button" class="g" id="cfgdef">기본 목록 불러오기</button><span class="note" id="cfgmsg"></span></div>
  <hr style="border:0;border-top:1px solid var(--bd);margin:14px 0">
+ <b>공휴일 추가 (임시공휴일 등)</b>
+ <div class="note">주말과 법정 공휴일(2026~2028년)은 자동 적용됩니다. 임시공휴일이나 2029년 이후 공휴일은 여기에 날짜를 한 줄에 하나씩(예: 2027-06-03) 적어 주세요. 이 날은 음주검사 시행자가 공란이 되고, 익일 계획 불러오기에서 제외됩니다.</div>
+ <textarea id="cfgh" placeholder="2029-02-12"></textarea>
+ <div class="row"><button type="button" id="holsave">공휴일 저장</button><span class="note" id="holmsg"></span></div>
+ <hr style="border:0;border-top:1px solid var(--bd);margin:14px 0">
  <b>작업 종류 관리</b>
  <div class="note">작업 종류마다 키워드·위험요인·관리감독자 지시사항을 등록합니다. 일지의 금일 업무내용에 키워드가 들어 있으면 해당 작업 종류가 자동으로 추천됩니다. 키워드가 너무 짧으면(예: 한 글자) 엉뚱한 작업이 추천될 수 있습니다. ‘적용 월’을 적으면 그 달의 일지에서만 추천됩니다(예: 온열 6-8, 한랭 11-2).</div>
  <div id="wted"></div>
@@ -149,6 +154,15 @@ var SB_KEY="sb_publishable_OvYm6966dyk9Z9IyiKpi_Q_bM2FBQtJ";
 var sb=null;try{if(typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}})}catch(e){}
 
 var CHECKERS="안한전, 이태금";
+var HOL_BASE={
+"2026-01-01":1,"2026-02-16":1,"2026-02-17":1,"2026-02-18":1,"2026-03-01":1,"2026-03-02":1,"2026-05-01":1,"2026-05-05":1,"2026-05-24":1,"2026-05-25":1,"2026-06-03":1,"2026-06-06":1,"2026-07-17":1,"2026-08-15":1,"2026-08-17":1,"2026-09-24":1,"2026-09-25":1,"2026-09-26":1,"2026-10-03":1,"2026-10-05":1,"2026-10-09":1,"2026-12-25":1,
+"2027-01-01":1,"2027-02-06":1,"2027-02-07":1,"2027-02-08":1,"2027-02-09":1,"2027-03-01":1,"2027-05-01":1,"2027-05-03":1,"2027-05-05":1,"2027-05-13":1,"2027-06-06":1,"2027-07-17":1,"2027-07-19":1,"2027-08-15":1,"2027-08-16":1,"2027-09-14":1,"2027-09-15":1,"2027-09-16":1,"2027-10-03":1,"2027-10-04":1,"2027-10-09":1,"2027-10-11":1,"2027-12-25":1,"2027-12-27":1,
+"2028-01-01":1,"2028-01-25":1,"2028-01-26":1,"2028-01-27":1,"2028-03-01":1,"2028-04-12":1,"2028-05-01":1,"2028-05-02":1,"2028-05-05":1,"2028-06-06":1,"2028-07-17":1,"2028-08-15":1,"2028-10-02":1,"2028-10-03":1,"2028-10-04":1,"2028-10-05":1,"2028-10-09":1,"2028-12-25":1};
+var HOL_EXTRA=[];
+function isOff(d){if(!d)return false;var w=new Date(d+"T00:00:00").getDay();return w===0||w===6||!!HOL_BASE[d]||HOL_EXTRA.indexOf(d)>-1}
+function updDay(){if(!cur)return;var dt=new Date(cur+"T00:00:00");$("dow").textContent=["일","월","화","수","목","금","토"][dt.getDay()]+"요일"+(isOff(cur)?" · 휴일(주말·공휴일)":"");$("chker").textContent=isOff(cur)?"(주말·공휴일: 교대근무자 — 인쇄 시 공란)":CHECKERS}
+function checkersFor(d){return isOff(d)?"":CHECKERS}
+
 var GAS=[["g1","관리동냉온수기"],["g2","검사고냉온수기"],["g3","연관보일러"],["g4","검사고보일러"],["g5","식당"]];
 var WAT=[["w1","시수(대)"],["w2","시수(소)"],["w3","시수(귤현)"],["w4","연관보일러 1"],["w5","연관보일러 2"],["w6","검사고"],["w7","옥외세척고"],["w8","정수"]];
 var POOL_DEF=["작업안전수칙 낭독","근골격계 예방 체조 실시","작업장 통로 확보로 위험요인 제거","기계·기구, 설비의 안전보건 점검","작업 전 보호구 착용 상태 확인","고소작업 시 안전대 착용 및 추락 방지","전기 작업 전 전원 차단 및 잠금·표지 부착","화기작업 전 소화기 비치 및 주변 가연물 제거","밀폐공간 작업 전 산소·유해가스 농도 측정","중량물 취급 시 2인 1조 작업 및 올바른 자세","작업 중 휴대전화 사용 금지 및 주변 확인","작업 종료 후 정리정돈 및 잔여 위험요인 확인","미끄럼 위험 구간 안내 및 신속한 제거","차량·장비 이동 시 신호수 배치 및 유도"];
@@ -161,7 +175,7 @@ var NAMES=["이근수","유성재","이이규","노성주","김종원","위차�
 
 var POOL=POOL_DEF.slice(),SAFE=SAFE_DEF.slice();
 var $=function(i){return document.getElementById(i)};
-var cur="",rec={},photo=null,rev=null,dirty=false,saving=false,pending=false,timer=null,conflict=false,prevData=[],draftList=[],dirItems=[],sfItems=[];
+var cur="",rec={},photo=null,rev=null,dirty=false,saving=false,pending=false,timer=null,conflict=false,prevData=[],prevDates=[],draftList=[],dirItems=[],sfItems=[];
 
 function iso(d){var m=("0"+(d.getMonth()+1)).slice(-2),dd=("0"+d.getDate()).slice(-2);return d.getFullYear()+"-"+m+"-"+dd}
 function z2(v){return("0"+v).slice(-2)}
@@ -176,7 +190,6 @@ function build(){
  h="";CHK.forEach(function(r){h+='<tr><td>'+r[0]+'</td>';CB.forEach(function(c,i){h+='<td><input type="number" class="sm" style="width:56px" value="'+(r[0]=="일일/주간"?0:"")+'" data-k="'+c+i+r[0]+'"></td>'.replace(c+i+r[0],c+"_"+CHK.indexOf(r))});h+='</tr>'});$("chk").innerHTML=h;
   h="";DIV.forEach(function(d){h+='<div style="margin:8px 0"><b>'+d[1]+'</b><div class="grid2"><div><label>금일 업무내용</label><textarea data-k="t_'+d[0]+'"></textarea></div><div><label>익일 업무계획</label><textarea data-k="n_'+d[0]+'"></textarea></div></div></div>'});$("div").innerHTML=h;
  h="";NAMES.forEach(function(n,i){if(EXEMPT[n]){h+='<div><b>'+n+'</b><span class="note">'+EXEMPT[n]+' (측정 안 함)</span></div>';return}h+='<div><b>'+n+'</b><select data-k="as'+i+'" class="ast" title="비번/휴무 선택"><option value="">측정</option><option>비번</option><option>휴무</option></select><input type="number" step="0.01" min="0" class="sm" value="0.00" data-k="a'+i+'"><input type="time" data-k="at'+i+'"><button type="button" class="g clk" data-t="at'+i+'" title="현재 시간 입력">현재 시간</button></div>'});$("al").innerHTML=h;
- $("chker").textContent=CHECKERS;
 }
 
 function fields(){return document.querySelectorAll("[data-k]")}
@@ -231,7 +244,7 @@ function pageHtml(){
  for(var c=0;c<4;c++)A+='<th>성 명</th><th class="mv">측정수치(%)</th><th>시간</th>';
  A+='</tr>';
  for(var r=0;r<4;r++){A+='<tr>';for(c=0;c<4;c++){var i=r*4+c,nm=NAMES[i],st=q("as"+i);A+='<td>'+nm+'</td>'+(EXEMPT[nm]?'<td colspan="2">'+EXEMPT[nm]+'</td>':st?'<td>'+esc(st)+'</td><td></td>':'<td>'+esc(q("a"+i))+'</td><td>'+esc(q("at"+i))+'</td>')}A+='</tr>'}
- var K='<table class="t g13"><colgroup><col style="width:62px">'+new Array(13).join('<col>')+'</colgroup><tr><td colspan="13" class="bar">기타 사항</td></tr><tr><th>구 분</th><th colspan="7">금 일 업 무 내 용</th><th colspan="5">익 일 업 무 계 획</th></tr>'+rows+'<tr><td class="b">음주검사<br>시행자</td><td colspan="12" class="l">- '+esc(CHECKERS)+'</td></tr>'+A+'</table>';
+ var K='<table class="t g13"><colgroup><col style="width:62px">'+new Array(13).join('<col>')+'</colgroup><tr><td colspan="13" class="bar">기타 사항</td></tr><tr><th>구 분</th><th colspan="7">금 일 업 무 내 용</th><th colspan="5">익 일 업 무 계 획</th></tr>'+rows+'<tr><td class="b">음주검사<br>시행자</td><td colspan="12" class="l">'+(checkersFor(cur)?"- "+esc(checkersFor(cur)):"")+'</td></tr>'+A+'</table>';
  return H+I+E+T+K;
 }
 function wrapDoc(pages,title){
@@ -351,22 +364,22 @@ function fillFields(){
  if(!rec.wtSeen)rec.wtSeen=matchedNames();
  mkDir();alSync();
  if(!rec.sfs)rec.sfs=SAFE.slice(0,3);
- var dt=new Date(cur+"T00:00:00");$("dow").textContent=["일","월","화","수","목","금","토"][dt.getDay()]+"요일";
+ var dt=new Date(cur+"T00:00:00");$("dow").textContent=["일","월","화","수","목","금","토"][dt.getDay()]+"요일";updDay();
  if(rec._wAuto===undefined)rec._wAuto=!rec.tbm_w;
  autoWork();
  showCustom();showDir();showSf();showPhoto();calc();
 }
 async function load(date){
  setStatus("불러오는 중…","w");
- var row=null,prev=[];
+ var row=null,prev=[],prevD=[];
  try{
   var a=await sb.from("logs").select("data,photo,updated_at").eq("log_date",date).maybeSingle();if(a.error)throw a.error;row=a.data;
   var b=await sb.from("logs").select("log_date,data").lt("log_date",date).order("log_date",{ascending:false}).limit(14);if(b.error)throw b.error;
-  prev=(b.data||[]).map(function(x){return x.data||{}});
+  prev=(b.data||[]).map(function(x){return x.data||{}});prevD=(b.data||[]).map(function(x){return x.log_date});
  }catch(e){setStatus("불러오지 못했습니다: "+errMsg(e),"err");if(cur)$("date").value=cur;return false}
  clearTimeout(timer);
  cur=date;conflict=false;dirty=false;$("cbox").style.display="none";
- rec=(row&&row.data)||{};photo=(row&&row.photo)||null;rev=row?new Date(row.updated_at).toISOString():null;prevData=prev;
+ rec=(row&&row.data)||{};photo=(row&&row.photo)||null;rev=row?new Date(row.updated_at).toISOString():null;prevData=prev;prevDates=prevD;
  fillFields();setBase();
  setStatus(row?"불러왔습니다":"새 일지입니다. 입력하면 자동 저장됩니다.","ok");
  getWeather(false);
@@ -452,8 +465,21 @@ async function loadLists(){
   var L=r.data&&r.data.value;if(L){if(L.pool&&L.pool.length)POOL=L.pool;if(L.safe&&L.safe.length)SAFE=L.safe}}
  catch(e){setStatus("목록을 불러오지 못했습니다: "+errMsg(e),"err")}
  cfgFill();
+ await loadHol();
  await loadWT();
 }
+async function loadHol(){
+ try{var r=await sb.from("settings").select("value").eq("key","holidays").maybeSingle();if(r.error)throw r.error;
+  if(r.data&&Array.isArray(r.data.value))HOL_EXTRA=r.data.value.filter(function(x){return/^\d{4}-\d{2}-\d{2}$/.test(x)})}
+ catch(e){}
+ $("cfgh").value=HOL_EXTRA.join("\n");
+}
+$("holsave").onclick=async function(){
+ var a=lines($("cfgh").value),bad=a.filter(function(x){return!/^\d{4}-\d{2}-\d{2}$/.test(x)||isNaN(new Date(x+"T00:00:00"))});
+ if(bad.length){$("holmsg").textContent="날짜 형식이 올바르지 않습니다: "+bad[0]+" (예: 2027-06-03)";return}
+ try{var r=await sb.from("settings").upsert({key:"holidays",value:a,updated_at:new Date().toISOString()});if(r.error)throw r.error}
+ catch(e){$("holmsg").textContent="저장하지 못했습니다: "+errMsg(e);return}
+ HOL_EXTRA=a.slice();updDay();$("holmsg").textContent="저장했습니다. 다른 컴퓨터는 새로고침하면 반영됩니다."};
 function cfgFill(){$("cfgp").value=POOL.join("\n");$("cfgs").value=SAFE.join("\n")}
 function lines(v){return v.split("\n").map(function(x){return x.trim()}).filter(function(x,i,a){return x&&a.indexOf(x)===i})}
 
@@ -494,7 +520,7 @@ $("shuf").onclick=function(){rec.rnd=[];rebalance();showDir();touch()};
 $("dir").addEventListener("change",function(){rec.rnd=[].slice.call($("dir").querySelectorAll("input:checked")).map(function(e){return dirItems[e.dataset.i]});mkDir();touch()});
 $("sf").addEventListener("change",function(){rec.sfs=[].slice.call($("sf").querySelectorAll("input:checked")).map(function(e){return sfItems[e.dataset.i]});touch()});
 $("ph").onchange=function(){var f=this.files[0];if(!f)return;resize(f,function(u){photo=u;showPhoto();dirty=true;ver++;saveNow()})};
-$("carry").onclick=function(){var p=prevData[0];if(!p){alert("불러올 전일 일지가 없습니다.");return}
+$("carry").onclick=function(){var p=null;for(var i=0;i<prevData.length;i++){if(!isOff(prevDates[i])){p=prevData[i];break}}if(!p){alert("불러올 전일 일지가 없습니다. (주말·공휴일 일지는 제외됩니다)");return}
  DIV.forEach(function(d){var v=p["n_"+d[0]];if(v)document.querySelector('[data-k="t_'+d[0]+'"]').value=v});autoWork();applyTypes();touch()};
 function alSync(){NAMES.forEach(function(n,i){var a=document.querySelector('[data-k="as'+i+'"]');if(!a)return;var on=!!a.value;[document.querySelector('[data-k="a'+i+'"]'),document.querySelector('[data-k="at'+i+'"]')].forEach(function(e){if(e)e.disabled=on});var b=document.querySelector('.clk[data-t="at'+i+'"]');if(b)b.disabled=on})}
 $("al").addEventListener("change",function(e){if(e.target.classList.contains("ast"))alSync()});
