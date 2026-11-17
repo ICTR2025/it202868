@@ -40,6 +40,7 @@ td.l{text-align:left}
 .al div{border:1px solid var(--bd);border-radius:6px;padding:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .al b{min-width:54px}
 .ast{width:auto;padding:3px 4px;font-size:13px}.ast+input:disabled{opacity:.4}
+.mini{padding:1px 8px;font-size:12px;line-height:1.4}
 .clk{padding:3px 8px;font-size:13px;line-height:1.2}
 .st-ok{color:#1a7f37}.st-err{color:#c62828}.st-w{color:var(--mu)}
 #cbox{border-color:#c62828}
@@ -86,12 +87,11 @@ details.card summary{cursor:pointer}
 </div>
 
 <div class="card" id="cardDir"><h2>관리감독자 안전작업 지시사항</h2><div class="note noprint offnote" style="display:none;color:#c62828">주말·공휴일에는 관리감독자 지시를 실시하지 않아 입력이 비활성화되며 인쇄 시 공란으로 나옵니다.</div>
- <div class="note noprint">작업 맞춤 지시사항(업무내용의 키워드로 추천)을 먼저 채우고, 4개가 안 되면 일반 목록에서 랜덤으로 채워 4개를 유지합니다. 체크를 바꿔 조정할 수 있고, 인쇄 시 체크한 항목만 출력됩니다.</div>
  <div class="wtb noprint"><b>작업 맞춤 지시사항</b>
   <div id="cbody"></div>
   <div class="row"><select id="wtsel"></select><button type="button" class="g" id="wtadd">작업 종류 추가</button></div>
  </div>
- <b>일반 지시사항</b> <span class="note noprint">(부족한 만큼 랜덤으로 채워집니다)</span>
+ <b>일반 지시사항</b>
  <div class="chk" id="dir"></div>
  <button class="g noprint" id="shuf">다시 뽑기</button>
 </div>
@@ -105,10 +105,8 @@ details.card summary{cursor:pointer}
  <div class="row"><label>참여</label><input data-k="tbm_p" placeholder="예: 정명진 외 10명" style="flex:1;min-width:200px"></div>
  <div class="row"><label>TBM 리더</label><input data-k="tbm_l" style="flex:1;min-width:200px"></div>
  <div class="row"><label>작업공정</label><input data-k="tbm_w" style="flex:1;min-width:200px"><button type="button" class="g noprint" id="wauto">자동 작성</button></div>
- <div class="note noprint">기계 금일 업무내용의 첫 줄 + ‘외 n개’(‘-’로 시작하는 줄 수 기준)로 자동 작성됩니다. 직접 고치면 자동 작성이 멈추고, 칸을 비우거나 ‘자동 작성’을 누르면 다시 자동으로 채워집니다.</div>
- <label>안전조치 (선택한 항목이 자동 입력됩니다)</label>
+ <div class="row" style="gap:8px;margin:0"><label style="margin:0">안전조치 (선택한 항목이 자동 입력됩니다)</label><button class="g mini noprint" id="sfshuf" type="button">다시 뽑기</button></div>
  <div class="chk" id="sf"></div>
- <button class="g noprint" id="sfshuf" type="button">안전조치 다시 뽑기</button>
  <label>환류</label><textarea data-k="tbm_f" style="min-height:56px"></textarea>
  <div class="row noprint"><label>TBM 사진</label><input type="file" id="ph" accept="image/*"></div>
  <img id="pv" alt="TBM 사진">
@@ -116,7 +114,7 @@ details.card summary{cursor:pointer}
 
 <div class="card"><h2>기타 사항</h2>
  <div class="noprint row"><button class="g" id="carry">전일 일지의 익일 계획 불러오기</button></div>
- <div class="opt" style="margin:8px 0"><b>금일 업무내용 (공통)</b><div class="note noprint">분야 구분 없이 적는 내용입니다. 인쇄 시 방재실을 제외한 분야(기계·전기·소방·환경·조경건축)의 금일 업무내용 맨 아래에 ‘- 내용’ 형태로 반복 추가됩니다(작업공정 ‘외 n개’ 계산에는 포함되지 않음).</div><textarea data-k="t_common"></textarea></div>
+ <div class="opt" style="margin:8px 0"><b>금일 업무내용 (공통)</b><textarea data-k="t_common"></textarea></div>
  
  <div id="div"></div>
 </div>
@@ -325,7 +323,6 @@ function showCustom(){
  var left=sel.filter(function(x){return items.indexOf(x)<0});
  if(left.length){h+='<div class="wtb2"><b>이전에 선택한 항목</b><div class="chk">';left.forEach(function(x){items.push(x);h+='<label><input type="checkbox" data-i="'+(items.length-1)+'" checked> '+esc(x)+'</label>'});h+='</div></div>'}
  custItems=items;
- if(h)h='<div class="note"'+(capHit||sel.length>=MAXC?' style="color:#c62828"':'')+'>선택 '+sel.length+'/'+MAXC+'개'+(capHit?' · 최대 '+MAXC+'개까지 선택할 수 있어 일부 항목은 체크되지 않았습니다. 다른 항목을 해제하면 체크할 수 있습니다.':(sel.length>=MAXC?' · 최대 개수입니다.':''))+'</div>'+h;
  capHit=false;
  $("cbody").innerHTML=h||'<div class="note">'+(WT.length?'추천된 작업 종류가 없습니다. 업무내용에 키워드가 들어가면 자동으로 나타나고, 아래에서 직접 추가할 수도 있습니다.':'등록된 작업 종류가 없습니다. 맨 아래 설정에서 작업 종류를 등록하세요.')+'</div>';
  var o='<option value="">작업 종류 선택…</option>';
