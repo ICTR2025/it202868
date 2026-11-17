@@ -85,7 +85,7 @@ details.card summary{cursor:pointer}
  </div>
 </div>
 
-<div class="card"><h2>관리감독자 안전작업 지시사항</h2>
+<div class="card" id="cardDir"><h2>관리감독자 안전작업 지시사항</h2><div class="note noprint offnote" style="display:none;color:#c62828">주말·공휴일에는 관리감독자 지시를 실시하지 않아 입력이 비활성화되며 인쇄 시 공란으로 나옵니다.</div>
  <div class="note noprint">작업 맞춤 지시사항(업무내용의 키워드로 추천)을 먼저 채우고, 4개가 안 되면 일반 목록에서 랜덤으로 채워 4개를 유지합니다. 체크를 바꿔 조정할 수 있고, 인쇄 시 체크한 항목만 출력됩니다.</div>
  <div class="wtb noprint"><b>작업 맞춤 지시사항</b>
   <div id="cbody"></div>
@@ -100,7 +100,7 @@ details.card summary{cursor:pointer}
  <div class="ov"><table><thead><tr><th>구분</th><th>기계</th><th>전기</th><th>소방</th><th>환경</th><th>건축·조경</th></tr></thead><tbody id="chk"></tbody></table></div>
 </div>
 
-<div class="card"><h2>작업 전 안전소통회의(TBM)</h2>
+<div class="card" id="cardTbm"><h2>작업 전 안전소통회의(TBM)</h2><div class="note noprint offnote" style="display:none;color:#c62828">주말·공휴일에는 TBM을 실시하지 않아 입력이 비활성화되며 인쇄 시 공란으로 나옵니다.</div>
  <div class="row"><label>시간</label><input data-k="tbm_t" value="09:00~09:10 / 13:00~13:10" style="flex:1;min-width:200px"></div>
  <div class="row"><label>참여</label><input data-k="tbm_p" placeholder="예: 정명진 외 10명" style="flex:1;min-width:200px"></div>
  <div class="row"><label>TBM 리더</label><input data-k="tbm_l" style="flex:1;min-width:200px"></div>
@@ -108,6 +108,7 @@ details.card summary{cursor:pointer}
  <div class="note noprint">기계 금일 업무내용의 첫 줄 + ‘외 n개’(‘-’로 시작하는 줄 수 기준)로 자동 작성됩니다. 직접 고치면 자동 작성이 멈추고, 칸을 비우거나 ‘자동 작성’을 누르면 다시 자동으로 채워집니다.</div>
  <label>안전조치 (선택한 항목이 자동 입력됩니다)</label>
  <div class="chk" id="sf"></div>
+ <button class="g noprint" id="sfshuf" type="button">안전조치 다시 뽑기</button>
  <label>환류</label><textarea data-k="tbm_f" style="min-height:56px"></textarea>
  <div class="row noprint"><label>TBM 사진</label><input type="file" id="ph" accept="image/*"></div>
  <img id="pv" alt="TBM 사진">
@@ -160,7 +161,8 @@ var HOL_BASE={
 "2028-01-01":1,"2028-01-25":1,"2028-01-26":1,"2028-01-27":1,"2028-03-01":1,"2028-04-12":1,"2028-05-01":1,"2028-05-02":1,"2028-05-05":1,"2028-06-06":1,"2028-07-17":1,"2028-08-15":1,"2028-10-02":1,"2028-10-03":1,"2028-10-04":1,"2028-10-05":1,"2028-10-09":1,"2028-12-25":1};
 var HOL_EXTRA=[];
 function isOff(d){if(!d)return false;var w=new Date(d+"T00:00:00").getDay();return w===0||w===6||!!HOL_BASE[d]||HOL_EXTRA.indexOf(d)>-1}
-function updDay(){if(!cur)return;var dt=new Date(cur+"T00:00:00");$("dow").textContent=["일","월","화","수","목","금","토"][dt.getDay()]+"요일"+(isOff(cur)?" · 휴일(주말·공휴일)":"");$("chker").textContent=checkersFor(cur)}
+function updOff(){var o=isOff(cur);["cardDir","cardTbm"].forEach(function(id){var c=$(id);if(!c)return;if(o)c.setAttribute("inert","");else c.removeAttribute("inert");c.style.opacity=o?".45":"";c.querySelector(".offnote").style.display=o?"block":"none"})}
+function updDay(){if(!cur)return;updOff();var dt=new Date(cur+"T00:00:00");$("dow").textContent=["일","월","화","수","목","금","토"][dt.getDay()]+"요일"+(isOff(cur)?" · 휴일(주말·공휴일)":"");$("chker").textContent=checkersFor(cur)}
 function checkersFor(d){return isOff(d)?"경정비 일상검사":CHECKERS}
 
 var GAS=[["g1","관리동냉온수기"],["g2","검사고냉온수기"],["g3","연관보일러"],["g4","검사고보일러"],["g5","식당"]];
@@ -220,7 +222,8 @@ function pageHtml(){
  var dt=new Date(cur+"T00:00:00");
  var dstr=dt.getFullYear()+"년 "+(dt.getMonth()+1)+"월 "+dt.getDate()+"일 "+["일","월","화","수","목","금","토"][dt.getDay()]+"요일";
  var mc=function(k){return'<td class="n">'+P(k)+'</td><td class="n">'+C(k)+'</td><td class="n">'+U(k)+'</td>'};
- var dirs=(rec.dir||[]).map(function(t){return"- "+esc(t)}).join("<br>");
+ var off=isOff(cur);
+ var dirs=off?"":(rec.dir||[]).map(function(t){return"- "+esc(t)}).join("<br>");
  var sf=br((rec.sfs||[]).map(function(t){return"- "+t}).join("\n"));
  var H='<table class="hd"><tr><td class="tt">일 일 업 무 일 지</td><td><table class="t sg"><tr><th>작성자</th><th>담당자</th><th>팀 장</th></tr><tr><td></td><td></td><td></td></tr></table></td></tr></table>';
  var I='<table class="t"><tr><th class="b2 w2">일 자</th><td class="b2">'+dstr+'</td><th class="b2 w2">날 씨</th><td class="b2">온도 (최저 '+esc(q("tmin"))+'℃ 최고 '+esc(q("tmax"))+'℃) 습도 '+esc(q("hum"))+'%</td></tr><tr><th class="b2">출결사항</th><td class="b2">결근 '+esc(q("abs"))+' 명</td><th class="b2">특기사항</th><td class="l b2">'+esc(q("spec"))+'</td></tr></table>';
@@ -234,7 +237,7 @@ function pageHtml(){
  E+='<tr class="e3"><td colspan="4" rowspan="2" class="l d">'+dirs+'</td><td colspan="2" class="l">옥외세척고</td>'+mc("w7")+'</tr>';
  E+='<tr class="e3"><td colspan="2" class="l">정수</td>'+mc("w8")+'</tr></table>';
  var ck=CHK.map(function(r){return'<tr class="k"><td>'+r[0]+'</td>'+CB.map(function(c,i){return'<td>'+esc(q(c+i+r[0]))+'</td>'}).join('')+'</tr>'}).join('');
- var T='<table class="t"><tr><th colspan="6" style="width:38%">금일 점검</th><th>작업 전, 안전소통회의(TBM)</th><th style="width:26%">사 진</th></tr><tr class="k"><th style="width:58px">구 분</th><th>기계</th><th>전기</th><th>소방</th><th>환경</th><th>건축<br>조경</th><td rowspan="4" class="l x">◦ 시 간 : '+esc(q("tbm_t"))+'<br>◦ 참 여 : '+esc(q("tbm_p"))+'<br>◦ TBM 리더 : '+esc(q("tbm_l"))+'<br>◦ 작업공정 : '+esc(q("tbm_w"))+'<br>◦ <b>안전조치</b><br>'+sf+(q("tbm_f").trim()?'<br>◦ <b>환류</b><br>'+br(q("tbm_f")):'')+'</td><td rowspan="4" class="ph">'+(photo?'<img src="'+photo+'" alt="">':'')+'</td></tr>'+ck+'</table>';
+ var T='<table class="t"><tr><th colspan="6" style="width:38%">금일 점검</th><th>작업 전, 안전소통회의(TBM)</th><th style="width:26%">사 진</th></tr><tr class="k"><th style="width:58px">구 분</th><th>기계</th><th>전기</th><th>소방</th><th>환경</th><th>건축<br>조경</th><td rowspan="4" class="l x">'+(off?'':'◦ 시 간 : '+esc(q("tbm_t"))+'<br>◦ 참 여 : '+esc(q("tbm_p"))+'<br>◦ TBM 리더 : '+esc(q("tbm_l"))+'<br>◦ 작업공정 : '+esc(q("tbm_w"))+'<br>◦ <b>안전조치</b><br>'+sf+(q("tbm_f").trim()?'<br>◦ <b>환류</b><br>'+br(q("tbm_f")):''))+'</td><td rowspan="4" class="ph">'+(photo&&!off?'<img src="'+photo+'" alt="">':'')+'</td></tr>'+ck+'</table>';
  var cl=q("t_common").split("\n").map(function(l){return l.trim()}).filter(Boolean).map(function(l){return/^[-·•*ㆍ○※◦▪▶]/.test(l)?l:"- "+l}).join("\n");
  var rows=DIV.map(function(d,i){var txt=q("t_"+d[0]);
   if(cl&&d[1].replace(/\s/g,"")!=="방재실")txt=(txt.trim()?txt.replace(/\s+$/,"")+"\n":"")+cl;
@@ -365,7 +368,7 @@ function fillFields(){
  mkDir();
  if(isOff(cur))NAMES.forEach(function(n,i){var a=document.querySelector('[data-k="as'+i+'"]');if(a&&!(("as"+i) in rec))a.value="휴무"});
  alSync();
- if(!rec.sfs)rec.sfs=SAFE.slice(0,3);
+ if(!rec.sfs)rec.sfs=shuffle(SAFE).slice(0,3);
  var dt=new Date(cur+"T00:00:00");$("dow").textContent=["일","월","화","수","목","금","토"][dt.getDay()]+"요일";updDay();
  if(rec._wAuto===undefined)rec._wAuto=!rec.tbm_w;
  autoWork();
@@ -520,6 +523,7 @@ $("cbody").addEventListener("click",function(e){var b=e.target.closest(".wtx");i
 $("date").addEventListener("change",function(){var v=$("date").value;if(v)gotoDate(v)});
 $("shuf").onclick=function(){rec.rnd=[];rebalance();showDir();touch()};
 $("dir").addEventListener("change",function(){rec.rnd=[].slice.call($("dir").querySelectorAll("input:checked")).map(function(e){return dirItems[e.dataset.i]});mkDir();touch()});
+$("sfshuf").onclick=function(){rec.sfs=shuffle(SAFE).slice(0,3);showSf();touch()};
 $("sf").addEventListener("change",function(){rec.sfs=[].slice.call($("sf").querySelectorAll("input:checked")).map(function(e){return sfItems[e.dataset.i]});touch()});
 $("ph").onchange=function(){var f=this.files[0];if(!f)return;resize(f,function(u){photo=u;showPhoto();dirty=true;ver++;saveNow()})};
 $("carry").onclick=function(){var p=null;for(var i=0;i<prevData.length;i++){if(!isOff(prevDates[i])){p=prevData[i];break}}if(!p){alert("불러올 전일 일지가 없습니다. (주말·공휴일 일지는 제외됩니다)");return}
