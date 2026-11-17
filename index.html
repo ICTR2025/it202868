@@ -142,6 +142,7 @@ details.card summary{cursor:pointer}
 <div class="row noprint"><button id="dl">인쇄용 파일 저장</button><div class="note" style="flex-basis:100%">※ ‘인쇄용 파일 저장’을 누르면 일일업무일지 양식의 파일이 저장됩니다. 파일을 열면 인쇄 창이 뜨며, 프린터 대신 ‘PDF로 저장’을 선택할 수도 있습니다.</div></div>
 </div>
 
+<div class="note noprint" style="text-align:center;margin:14px 0">화면 버전 2026-11-17 (로그인 없음)</div>
 <script>
 var SB_URL="https://nqxjiuklvhqzbpfqbrxx.supabase.co";
 var SB_KEY="sb_publishable_OvYm6966dyk9Z9IyiKpi_Q_bM2FBQtJ";
@@ -156,7 +157,7 @@ var DIV=[["m","기 계"],["e","전 기"],["f","소 방"],["v","환 경"],["c","�
 var CHK=[["일일/주간"],["월간이상"],["기타"]];
 var CB=["lm","le","lf","lv","lc"];
 var EXEMPT={"우제영":"근로시간면제"};
-var NAMES=["이근수","유성재","이이규","노성주","김종원","위치준","정용기","송대성","이경탁","남상준","김대우","최철훈","정명진","전면우","정일서","우제영"];
+var NAMES=["이근수","유성재","이이규","노성주","김종원","위차준","정용기","송대성","이경탁","남상준","김대우","최철훈","정명진","전면우","정일서","우제영"];
 
 var POOL=POOL_DEF.slice(),SAFE=SAFE_DEF.slice();
 var $=function(i){return document.getElementById(i)};
@@ -366,12 +367,49 @@ async function load(date){
  clearTimeout(timer);
  cur=date;conflict=false;dirty=false;$("cbox").style.display="none";
  rec=(row&&row.data)||{};photo=(row&&row.photo)||null;rev=row?new Date(row.updated_at).toISOString():null;prevData=prev;
- fillFields();
+ fillFields();setBase();
  setStatus(row?"불러왔습니다":"새 일지입니다. 입력하면 자동 저장됩니다.","ok");
  getWeather(false);
  return true;
 }
-function touch(){if(!cur)return;dirty=true;setStatus("저장 대기 중…","w");clearTimeout(timer);timer=setTimeout(saveNow,900)}
+var base={},basePhoto=null,mergeTries=0,ver=0;
+function snap(o){var b={};Object.keys(o).forEach(function(k){b[k]=JSON.stringify(o[k])});return b}
+function setBase(){collect();base=snap(rec);basePhoto=photo}
+function refill(){
+ var a=document.activeElement,k=a&&a.dataset&&a.dataset.k,ss=null,se=null,st=0;
+ if(k&&a.selectionStart!=null){ss=a.selectionStart;se=a.selectionEnd;st=a.scrollTop}
+ fillFields();showPhoto();calc();
+ if(k){var e=document.querySelector('[data-k="'+k+'"]');if(e){try{e.focus();if(ss!=null){e.setSelectionRange(ss,se);e.scrollTop=st}}catch(x){}}}
+}
+async function mergeRemote(){
+ var date=cur;
+ var r=await sb.from("logs").select("data,photo,updated_at").eq("log_date",date).maybeSingle();
+ if(r.error)throw r.error;
+ if(date!==cur)return false;
+ collect();
+ var remote=r.data;
+ if(!remote){rev=null;return true}
+ var rd=remote.data||{},m={};
+ Object.keys(rd).forEach(function(k){m[k]=rd[k]});
+ Object.keys(rec).forEach(function(k){if(!(k in rd)||JSON.stringify(rec[k])!==base[k])m[k]=rec[k]});
+ var ph=(photo!==basePhoto)?photo:(remote.photo||null);
+ rec=m;photo=ph;rev=new Date(remote.updated_at).toISOString();
+ base=snap(rd);basePhoto=remote.photo||null;
+ refill();
+ return true}
+async function pollRemote(){
+ if(!cur||dirty||saving||conflict||document.hidden)return;
+ var date=cur;
+ try{var r=await sb.from("logs").select("updated_at").eq("log_date",date).maybeSingle();
+  if(r.error||!r.data||date!==cur||dirty||saving)return;
+  var ts=new Date(r.data.updated_at).toISOString();if(ts===rev)return;
+  var f=await sb.from("logs").select("data,photo,updated_at").eq("log_date",date).maybeSingle();
+  if(f.error||!f.data||date!==cur||dirty||saving)return;
+  rec=f.data.data||{};photo=f.data.photo||null;rev=new Date(f.data.updated_at).toISOString();
+  refill();setBase();setStatus("다른 사람이 입력한 내용을 불러왔습니다 "+hhmm(),"ok")}catch(e){}
+}
+setInterval(pollRemote,15000);
+function touch(){if(!cur)return;dirty=true;ver++;setStatus("저장 대기 중…","w");clearTimeout(timer);timer=setTimeout(saveNow,900)}
 function onConflict(){
  conflict=true;setStatus("저장되지 않음 — 다른 컴퓨터에서 먼저 수정됨","err");
  var b=$("cbox");b.style.display="block";
@@ -382,19 +420,22 @@ async function saveNow(){
  if(!cur||!dirty||conflict)return true;
  if(saving){pending=true;return false}
  saving=true;
- var date=cur,sent=new Date().toISOString(),ok=false;
- collect();
+ var date=cur,sent=new Date().toISOString(),ok=false,merged=false,v=ver;
+ collect();var sentRec=JSON.parse(JSON.stringify(rec)),sentPh=photo;
  try{
   setStatus("저장 중…","w");
   if(rev===null){
    var r=await sb.from("logs").insert({log_date:date,data:rec,photo:photo,updated_at:sent});
-   if(r.error){if(r.error.code==="23505")onConflict();else throw r.error}else ok=true;
+   if(r.error){if(r.error.code==="23505")merged=true;else throw r.error}else ok=true;
   }else{
    var u=await sb.from("logs").update({data:rec,photo:photo,updated_at:sent}).eq("log_date",date).eq("updated_at",rev).select("updated_at");
    if(u.error)throw u.error;
-   if(!u.data||!u.data.length)onConflict();else ok=true;
+   if(!u.data||!u.data.length)merged=true;else ok=true;
   }
-  if(ok){rev=sent;dirty=false;setStatus("저장됨 "+hhmm(),"ok")}
+  if(merged){
+   if(mergeTries>=5){mergeTries=0;onConflict()}
+   else{mergeTries++;await mergeRemote();dirty=true;saving=false;return saveNow()}}
+  if(ok){rev=sent;if(ver===v)dirty=false;base=snap(sentRec);basePhoto=sentPh;setStatus("저장됨 "+hhmm()+(mergeTries?" (다른 사람의 입력과 합쳐 저장)":""),"ok");mergeTries=0}
  }catch(e){setStatus("저장 실패: "+errMsg(e)+" (5초 뒤 다시 시도합니다)","err");timer=setTimeout(saveNow,5000)}
  saving=false;
  if(pending){pending=false;if(dirty&&!conflict)return saveNow()}
@@ -452,7 +493,7 @@ $("date").addEventListener("change",function(){var v=$("date").value;if(v)gotoDa
 $("shuf").onclick=function(){rec.rnd=[];rebalance();showDir();touch()};
 $("dir").addEventListener("change",function(){rec.rnd=[].slice.call($("dir").querySelectorAll("input:checked")).map(function(e){return dirItems[e.dataset.i]});mkDir();touch()});
 $("sf").addEventListener("change",function(){rec.sfs=[].slice.call($("sf").querySelectorAll("input:checked")).map(function(e){return sfItems[e.dataset.i]});touch()});
-$("ph").onchange=function(){var f=this.files[0];if(!f)return;resize(f,function(u){photo=u;showPhoto();dirty=true;saveNow()})};
+$("ph").onchange=function(){var f=this.files[0];if(!f)return;resize(f,function(u){photo=u;showPhoto();dirty=true;ver++;saveNow()})};
 $("carry").onclick=function(){var p=prevData[0];if(!p){alert("불러올 전일 일지가 없습니다.");return}
  DIV.forEach(function(d){var v=p["n_"+d[0]];if(v)document.querySelector('[data-k="t_'+d[0]+'"]').value=v});autoWork();applyTypes();touch()};
 function alSync(){NAMES.forEach(function(n,i){var a=document.querySelector('[data-k="as'+i+'"]');if(!a)return;var on=!!a.value;[document.querySelector('[data-k="a'+i+'"]'),document.querySelector('[data-k="at'+i+'"]')].forEach(function(e){if(e)e.disabled=on});var b=document.querySelector('.clk[data-t="at'+i+'"]');if(b)b.disabled=on})}
@@ -466,7 +507,7 @@ $("cfgsave").onclick=async function(){var p=lines($("cfgp").value),t=lines($("cf
 $("cfgdef").onclick=function(){$("cfgp").value=POOL_DEF.join("\n");$("cfgs").value=SAFE_DEF.join("\n");$("cfgmsg").textContent="기본 목록을 불러왔습니다. ‘목록 저장’을 눌러야 적용됩니다."};
 $("cbox").addEventListener("click",async function(e){if(e.target.id==="creload"){var d=cur;conflict=false;dirty=false;await load(d)}});
 $("clr").onclick=async function(){if(!confirm(cur+" 일지에 입력·저장된 내용(사진 포함)을 모두 지웁니다.\n지운 뒤에는 되돌릴 수 없습니다. 계속할까요?"))return;
- rec={};photo=null;conflict=false;$("cbox").style.display="none";fillFields();dirty=true;await saveNow()};
+ rec={};photo=null;conflict=false;$("cbox").style.display="none";fillFields();dirty=true;ver++;await saveNow()};
 $("bk").onclick=function(){var b=$("bkbox");b.style.display=b.style.display==="none"?"block":"none";if(!$("bkm").value)$("bkm").value=cur.slice(0,7);$("bkmsg").textContent=""};
 $("bkx").onclick=function(){$("bkbox").style.display="none"};
 $("bkpdf").onclick=async function(){
