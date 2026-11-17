@@ -25,7 +25,7 @@ input[type=number]{width:96px;text-align:right}
 input[readonly]{opacity:.75}
 .sm{width:80px}
 button,.btn{font:inherit;background:var(--ac);color:#fff;border:0;border-radius:6px;padding:7px 12px;cursor:pointer;text-decoration:none;display:inline-block}
-button.g,.btn.g{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+button.g,.btn.g{background:transparent;color:var(--ac);border:1px solid var(--ac);padding:3px 8px;font-size:13px;line-height:1.2}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .ov{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:14px}
@@ -40,8 +40,7 @@ td.l{text-align:left}
 .al div{border:1px solid var(--bd);border-radius:6px;padding:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .al b{min-width:54px}
 .ast{width:auto;padding:3px 4px;font-size:13px}.ast+input:disabled{opacity:.4}
-.mini{padding:1px 8px;font-size:12px;line-height:1.4}
-.clk{padding:3px 8px;font-size:13px;line-height:1.2}
+.clk{}
 .st-ok{color:#1a7f37}.st-err{color:#c62828}.st-w{color:var(--mu)}
 #cbox{border-color:#c62828}
 .wtb{border:1px solid var(--bd);border-radius:8px;padding:8px;margin:8px 0}.wtb2{margin:8px 0}.wte textarea{min-height:70px}
@@ -108,7 +107,7 @@ details.card summary{cursor:pointer}
  <div class="row"><label>참여</label><input data-k="tbm_p" placeholder="예: 정명진 외 10명" style="flex:1;min-width:200px"></div>
  <div class="row"><label>TBM 리더</label><input data-k="tbm_l" style="flex:1;min-width:200px"></div>
  <div class="row"><label>작업공정</label><input data-k="tbm_w" style="flex:1;min-width:200px"><button type="button" class="g noprint" id="wauto">자동 작성</button></div>
- <div class="row" style="gap:8px;margin:0"><label style="margin:0">안전조치 (선택한 항목이 자동 입력됩니다)</label><button class="g mini noprint" id="sfshuf" type="button">다시 뽑기</button></div>
+ <div class="row" style="gap:8px;margin:0"><label style="margin:0">안전조치 (선택한 항목이 자동 입력됩니다)</label><button class="g noprint" id="sfshuf" type="button">다시 뽑기</button></div>
  <div class="chk" id="sf"></div>
  <label>환류</label><textarea data-k="tbm_f" style="min-height:56px"></textarea>
  <div class="row noprint"><label>TBM 사진</label><input type="file" id="ph" accept="image/*"></div>
@@ -128,7 +127,7 @@ details.card summary{cursor:pointer}
 </div>
 
 
-<div class="row noprint"><button id="dl">인쇄용 파일 저장</button><div class="note" style="flex-basis:100%">※ ‘인쇄용 파일 저장’을 누르면 일일업무일지 양식의 파일이 저장됩니다. 파일을 열면 인쇄 창이 뜨며, 프린터 대신 ‘PDF로 저장’을 선택할 수도 있습니다.</div></div>
+<div class="row noprint"><button id="dl">인쇄용 파일 저장</button><button class="g" id="dsave" type="button" style="padding:7px 12px;font-size:inherit;line-height:normal">임시저장</button><span class="note" id="dsmsg"></span><div class="note" style="flex-basis:100%">※ ‘인쇄용 파일 저장’을 누르면 일일업무일지 양식의 파일이 저장됩니다. 파일을 열면 인쇄 창이 뜨며, 프린터 대신 ‘PDF로 저장’을 선택할 수도 있습니다.</div></div>
 </div>
 
 <div class="note noprint" style="text-align:center;margin:14px 0">화면 버전 2026-11-17 (로그인 없음)</div>
@@ -494,7 +493,7 @@ $("ph").onchange=function(){var f=this.files[0];if(!f)return;resize(f,function(u
 $("carry").onclick=function(){var p=null;for(var i=0;i<prevData.length;i++){if(!isOff(prevDates[i])){p=prevData[i];break}}if(!p){alert("불러올 전일 일지가 없습니다. (주말·공휴일 일지는 제외됩니다)");return}
  DIV.forEach(function(d){var v=p["n_"+d[0]];if(v)document.querySelector('[data-k="t_'+d[0]+'"]').value=v});autoWork();applyTypes();touch()};
 function alSync(){NAMES.forEach(function(n,i){var a=document.querySelector('[data-k="as'+i+'"]');if(!a)return;var on=!!a.value;[document.querySelector('[data-k="a'+i+'"]'),document.querySelector('[data-k="at'+i+'"]')].forEach(function(e){if(e)e.disabled=on});var b=document.querySelector('.clk[data-t="at'+i+'"]');if(b)b.disabled=on})}
-$("al").addEventListener("change",function(e){if(e.target.classList.contains("ast"))alSync()});
+$("al").addEventListener("change",function(e){if(e.target.classList.contains("ast")){var i=e.target.dataset.k.slice(2);if(e.target.value){var n=document.querySelector('[data-k="a'+i+'"]'),t=document.querySelector('[data-k="at'+i+'"]');if(n)n.value="0.00";if(t)t.value=""}alSync()}});
 $("al").addEventListener("click",function(e){var b=e.target.closest(".clk");if(!b)return;var el=document.querySelector('[data-k="'+b.dataset.t+'"]');el.value=hhmm();touch()});
 $("cbox").addEventListener("click",async function(e){if(e.target.id==="creload"){var d=cur;conflict=false;dirty=false;await load(d)}});
 async function exportMonth(m){
@@ -516,6 +515,12 @@ async function exportMonth(m){
   msg.textContent=rows.length+"일치를 저장했습니다. 파일을 열어 PDF로 저장하세요."}
  catch(e){msg.textContent="실패: "+errMsg(e)}
  finally{QO=null;cur=sv.cur;rec=sv.rec;photo=sv.photo}};
+$("dsave").onclick=async function(){
+ var m=$("dsmsg");m.textContent="저장 중…";
+ if(conflict){m.textContent="저장되지 않았습니다. 위 안내에서 ‘최신 내용 불러오기’를 확인하세요.";return}
+ collect();dirty=true;ver++;
+ try{await flush();await saveNow();var n=0;while(saving&&n<100){await sleep(100);n++}}catch(e){}
+ m.textContent=(!dirty&&!conflict)?"저장했습니다 ("+hhmm()+")":"저장하지 못했습니다. 연결을 확인하세요. 자동으로 다시 시도합니다."};
 $("dl").onclick=async function(){
  await flush();collect();
  var url=URL.createObjectURL(new Blob([buildDoc()],{type:"text/html"})),a=document.createElement("a");
