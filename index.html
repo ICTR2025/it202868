@@ -160,8 +160,8 @@ var HOL_BASE={
 "2028-01-01":1,"2028-01-25":1,"2028-01-26":1,"2028-01-27":1,"2028-03-01":1,"2028-04-12":1,"2028-05-01":1,"2028-05-02":1,"2028-05-05":1,"2028-06-06":1,"2028-07-17":1,"2028-08-15":1,"2028-10-02":1,"2028-10-03":1,"2028-10-04":1,"2028-10-05":1,"2028-10-09":1,"2028-12-25":1};
 var HOL_EXTRA=[];
 function isOff(d){if(!d)return false;var w=new Date(d+"T00:00:00").getDay();return w===0||w===6||!!HOL_BASE[d]||HOL_EXTRA.indexOf(d)>-1}
-function updDay(){if(!cur)return;var dt=new Date(cur+"T00:00:00");$("dow").textContent=["일","월","화","수","목","금","토"][dt.getDay()]+"요일"+(isOff(cur)?" · 휴일(주말·공휴일)":"");$("chker").textContent=isOff(cur)?"(주말·공휴일: 교대근무자 — 인쇄 시 공란)":CHECKERS}
-function checkersFor(d){return isOff(d)?"":CHECKERS}
+function updDay(){if(!cur)return;var dt=new Date(cur+"T00:00:00");$("dow").textContent=["일","월","화","수","목","금","토"][dt.getDay()]+"요일"+(isOff(cur)?" · 휴일(주말·공휴일)":"");$("chker").textContent=checkersFor(cur)}
+function checkersFor(d){return isOff(d)?"경정비 일상검사":CHECKERS}
 
 var GAS=[["g1","관리동냉온수기"],["g2","검사고냉온수기"],["g3","연관보일러"],["g4","검사고보일러"],["g5","식당"]];
 var WAT=[["w1","시수(대)"],["w2","시수(소)"],["w3","시수(귤현)"],["w4","연관보일러 1"],["w5","연관보일러 2"],["w6","검사고"],["w7","옥외세척고"],["w8","정수"]];
