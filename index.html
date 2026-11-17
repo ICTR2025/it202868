@@ -59,17 +59,8 @@ details.card summary{cursor:pointer}
 </style>
 </head>
 <body>
-<div class="wrap" id="login" style="display:none;max-width:380px">
- <div class="card"><h1>일일업무일지</h1><div class="sub">사내 공용 계정으로 로그인하세요.</div>
- <form id="lgf">
-  <div class="row"><label style="width:70px">이메일</label><input id="lge" type="email" autocomplete="username" required style="flex:1"></div>
-  <div class="row"><label style="width:70px">비밀번호</label><input id="lgp" type="password" autocomplete="current-password" required style="flex:1"></div>
-  <div class="row"><button type="submit">로그인</button><span class="note" id="lgmsg"></span></div>
- </form></div>
-</div>
-
 <div class="wrap" id="app" style="display:none">
-<div class="row noprint" style="justify-content:space-between"><h1>일일업무일지 작성 도우미</h1><div class="row"><span id="st" class="note"></span><button class="g" id="clr" type="button" style="color:#c62828;border-color:#c62828">모두 삭제</button><button class="g" id="bk" type="button">월 백업</button><button class="g" id="lgout" type="button">로그아웃</button></div></div>
+<div class="row noprint" style="justify-content:space-between"><h1>일일업무일지 작성 도우미</h1><div class="row"><span id="st" class="note"></span><button class="g" id="clr" type="button" style="color:#c62828;border-color:#c62828">모두 삭제</button><button class="g" id="bk" type="button">월 백업</button></div></div>
 <div class="card noprint" id="bkbox" style="display:none"><b>월별 인쇄용 파일 저장</b><div class="note">‘인쇄용 파일(한 달)’은 선택한 달의 일지를 하루 한 장씩 이어 붙인 파일 하나로 저장합니다. 파일을 열면 인쇄 창이 뜨며 ‘PDF로 저장’을 선택하면 됩니다.</div><div class="row"><input type="month" id="bkm" style="width:auto"><button type="button" id="bkpdf">인쇄용 파일(한 달) 저장</button><button type="button" class="g" id="bkx">닫기</button><span class="note" id="bkmsg"></span></div></div>
 <div class="sub noprint">입력한 내용은 자동으로 서버에 저장되어 다른 컴퓨터에서도 같은 내용이 보입니다. 작성이 끝나면 맨 아래 ‘인쇄용 파일 저장’을 누르세요.</div>
 
@@ -154,11 +145,11 @@ details.card summary{cursor:pointer}
 <script>
 var SB_URL="https://nqxjiuklvhqzbpfqbrxx.supabase.co";
 var SB_KEY="sb_publishable_OvYm6966dyk9Z9IyiKpi_Q_bM2FBQtJ";
-var sb=null;try{if(typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY)}catch(e){}
+var sb=null;try{if(typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}})}catch(e){}
 
 var CHECKERS="안한전, 이태금";
 var GAS=[["g1","관리동냉온수기"],["g2","검사고냉온수기"],["g3","연관보일러"],["g4","검사고보일러"],["g5","식당"]];
-var WAT=[["w1","시수(대)"],["w2","시수(소)"],["w3","시수(굴현)"],["w4","연관보일러 1"],["w5","연관보일러 2"],["w6","검사고"],["w7","옥외세척고"],["w8","정수"]];
+var WAT=[["w1","시수(대)"],["w2","시수(소)"],["w3","시수(귤현)"],["w4","연관보일러 1"],["w5","연관보일러 2"],["w6","검사고"],["w7","옥외세척고"],["w8","정수"]];
 var POOL_DEF=["작업안전수칙 낭독","근골격계 예방 체조 실시","작업장 통로 확보로 위험요인 제거","기계·기구, 설비의 안전보건 점검","작업 전 보호구 착용 상태 확인","고소작업 시 안전대 착용 및 추락 방지","전기 작업 전 전원 차단 및 잠금·표지 부착","화기작업 전 소화기 비치 및 주변 가연물 제거","밀폐공간 작업 전 산소·유해가스 농도 측정","중량물 취급 시 2인 1조 작업 및 올바른 자세","작업 중 휴대전화 사용 금지 및 주변 확인","작업 종료 후 정리정돈 및 잔여 위험요인 확인","미끄럼 위험 구간 안내 및 신속한 제거","차량·장비 이동 시 신호수 배치 및 유도"];
 var SAFE_DEF=["금일 작업별 유해·위험요인 파악 및 안전관리 대책과 실천사항 공유","안전보호구 착용 및 안전구호 “함께 지키는 안전, 함께 만드는 신뢰” 제창","국민체조 실시(근골격 예방) 등","작업 전 설비 전원 차단 및 잠금장치 확인","작업장 주변 정리정돈 및 통로 확보","고소작업 시 안전대 착용 및 추락 방지 조치 확인"];
 var DIV=[["m","기 계"],["e","전 기"],["f","소 방"],["v","환 경"],["c","조경·건축"],["b","방 재 실"]];
@@ -222,7 +213,7 @@ function pageHtml(){
  var E='<table class="t"><tr><td colspan="9" class="bar">에너지사용량 검침</td></tr><tr><th rowspan="2" style="width:104px">항목</th><th colspan="3">가스(Nm³)</th><th rowspan="2" colspan="2" class="w2">항목</th><th colspan="3">수도(㎥)</th></tr><tr><th>전일지침</th><th>금일지침</th><th>사용량</th><th>전일지침</th><th>금일지침</th><th>사용량</th></tr>';
  E+='<tr><td class="l lb">관리동냉온수기</td>'+mc("g1")+'<td colspan="2" class="l">시수(대)</td>'+mc("w1")+'</tr>';
  E+='<tr><td class="l lb">검사고냉온수기</td>'+mc("g2")+'<td colspan="2" class="l">시수(소)</td>'+mc("w2")+'</tr>';
- E+='<tr><td class="l lb">연관보일러</td>'+mc("g3")+'<td colspan="2" class="l">시수(굴현)</td>'+mc("w3")+'</tr>';
+ E+='<tr><td class="l lb">연관보일러</td>'+mc("g3")+'<td colspan="2" class="l">시수(귤현)</td>'+mc("w3")+'</tr>';
  E+='<tr><td class="l lb">검사고보일러</td>'+mc("g4")+'<td rowspan="2">연관보일러</td><td>1</td>'+mc("w4")+'</tr>';
  E+='<tr><td class="l">식 &nbsp; &nbsp; 당</td>'+mc("g5")+'<td>2</td>'+mc("w5")+'</tr>';
  E+='<tr class="e3"><th colspan="4">관리감독자 안전작업 지시사항</th><td colspan="2" class="l">검사고</td>'+mc("w6")+'</tr>';
@@ -506,33 +497,16 @@ window.addEventListener("beforeunload",function(e){if(dirty&&!conflict){e.preven
 document.addEventListener("visibilitychange",function(){if(document.hidden&&dirty&&!conflict)saveNow()});
 
 /* ---- 로그인 ---- */
-function showLogin(m){$("login").style.display="block";$("app").style.display="none";$("lgmsg").textContent=m||""}
 async function start(){
- $("login").style.display="none";$("app").style.display="block";
+ $("app").style.display="block";
  await loadLists();
  $("date").value=iso(new Date());
  await load($("date").value);
 }
-$("lgf").addEventListener("submit",async function(e){
- e.preventDefault();
- if(!sb){$("lgmsg").textContent="서버 연결 도구를 불러오지 못했습니다. 새로고침해 주세요.";return}
- $("lgmsg").textContent="로그인 중…";
- try{
-  var r=await sb.auth.signInWithPassword({email:$("lge").value.trim(),password:$("lgp").value});
-  if(r.error){var m=r.error.message||"";
-   if(/invalid login/i.test(m))$("lgmsg").textContent="이메일 또는 비밀번호가 올바르지 않습니다.";
-   else if(/fetch|network|load failed/i.test(m))$("lgmsg").textContent="서버에 연결하지 못했습니다. 인터넷 연결을 확인하세요. (Claude 미리보기 화면에서는 외부 서버 접속이 막혀 있을 수 있습니다.)";
-   else $("lgmsg").textContent="로그인하지 못했습니다: "+m;
-   return}
-  $("lgp").value="";await start();
- }catch(x){$("lgmsg").textContent="로그인하지 못했습니다: "+errMsg(x)}
-});
-$("lgout").onclick=async function(){await flush();try{await sb.auth.signOut()}catch(e){}location.reload()};
 async function boot(){
  build();
- if(!sb){showLogin("서버 연결 도구를 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침하세요.");return}
- try{var r=await sb.auth.getSession();if(r.data&&r.data.session){await start();return}}catch(e){}
- showLogin("");
+ if(!sb){$("app").style.display="block";setStatus("서버 연결 도구를 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침하세요.","err");return}
+ await start();
 }
 boot();
 
