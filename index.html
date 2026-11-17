@@ -61,8 +61,11 @@ details.card summary{cursor:pointer}
 </head>
 <body>
 <div class="wrap" id="app" style="display:none">
-<div class="row noprint" style="justify-content:space-between"><h1>일일업무일지 작성 도우미</h1><div class="row"><span id="st" class="note"></span><button class="g" id="clr" type="button" style="color:#c62828;border-color:#c62828">모두 삭제</button><button class="g" id="bk" type="button">월 백업</button></div></div>
-<div class="card noprint" id="bkbox" style="display:none"><b>월별 인쇄용 파일 저장</b><div class="note">‘인쇄용 파일(한 달)’은 선택한 달의 일지를 하루 한 장씩 이어 붙인 파일 하나로 저장합니다. 파일을 열면 인쇄 창이 뜨며 ‘PDF로 저장’을 선택하면 됩니다.</div><div class="row"><input type="month" id="bkm" style="width:auto"><button type="button" id="bkpdf">인쇄용 파일(한 달) 저장</button><button type="button" class="g" id="bkx">닫기</button><span class="note" id="bkmsg"></span></div></div>
+<div class="row noprint" style="justify-content:space-between"><h1>일일업무일지 작성 도우미</h1><div class="row"><span id="st" class="note"></span><button class="g" id="adm" type="button">관리자</button></div></div>
+<div class="card noprint" id="admbox" style="display:none"><b>관리자 로그인</b>
+ <form id="admf"><div class="row"><label style="width:70px">이메일</label><input id="adme" type="email" autocomplete="username" required style="flex:1"></div>
+ <div class="row"><label style="width:70px">비밀번호</label><input id="admp" type="password" autocomplete="current-password" required style="flex:1"></div>
+ <div class="row"><button type="submit">로그인</button><button type="button" class="g" id="admx">닫기</button><span class="note" id="admmsg"></span></div></form></div>
 <div class="sub noprint">입력한 내용은 자동으로 서버에 저장되어 다른 컴퓨터에서도 같은 내용이 보입니다. 작성이 끝나면 맨 아래 ‘인쇄용 파일 저장’을 누르세요.</div>
 
 <div class="card noprint" id="cbox" style="display:none"></div>
@@ -124,24 +127,6 @@ details.card summary{cursor:pointer}
  <div class="al" id="al"></div>
 </div>
 
-<details class="card noprint" id="cfg"><summary><b>설정 — 지시사항·안전조치 목록 관리</b></summary>
- <div class="note">한 줄에 한 항목씩 입력하세요. ‘목록 저장’을 누르면 위의 선택 목록에 바로 반영됩니다. 저장하면 모든 컴퓨터에 공유됩니다.</div>
- <label>관리감독자 안전작업 지시사항 (이 중 4개가 랜덤으로 선택됩니다)</label>
- <textarea id="cfgp" style="min-height:170px"></textarea>
- <label>안전조치 (위에서부터 3개가 기본 선택됩니다)</label>
- <textarea id="cfgs" style="min-height:130px"></textarea>
- <div class="row"><button id="cfgsave">목록 저장</button><button type="button" class="g" id="cfgdef">기본 목록 불러오기</button><span class="note" id="cfgmsg"></span></div>
- <hr style="border:0;border-top:1px solid var(--bd);margin:14px 0">
- <b>공휴일 추가 (임시공휴일 등)</b>
- <div class="note">주말과 법정 공휴일(2026~2028년)은 자동 적용됩니다. 임시공휴일이나 2029년 이후 공휴일은 여기에 날짜를 한 줄에 하나씩(예: 2027-06-03) 적어 주세요. 이 날은 음주검사 시행자가 공란이 되고, 익일 계획 불러오기에서 제외됩니다.</div>
- <textarea id="cfgh" placeholder="2029-02-12"></textarea>
- <div class="row"><button type="button" id="holsave">공휴일 저장</button><span class="note" id="holmsg"></span></div>
- <hr style="border:0;border-top:1px solid var(--bd);margin:14px 0">
- <b>작업 종류 관리</b>
- <div class="note">작업 종류마다 키워드·위험요인·관리감독자 지시사항을 등록합니다. 일지의 금일 업무내용에 키워드가 들어 있으면 해당 작업 종류가 자동으로 추천됩니다. 키워드가 너무 짧으면(예: 한 글자) 엉뚱한 작업이 추천될 수 있습니다. ‘적용 월’을 적으면 그 달의 일지에서만 추천됩니다(예: 온열 6-8, 한랭 11-2).</div>
- <div id="wted"></div>
- <div class="row"><button type="button" class="g" id="wtnew">작업 종류 추가</button><button type="button" id="wtsave">작업 종류 저장</button><span class="note" id="wtmsg"></span></div>
-</details>
 
 <div class="row noprint"><button id="dl">인쇄용 파일 저장</button><div class="note" style="flex-basis:100%">※ ‘인쇄용 파일 저장’을 누르면 일일업무일지 양식의 파일이 저장됩니다. 파일을 열면 인쇄 창이 뜨며, 프린터 대신 ‘PDF로 저장’을 선택할 수도 있습니다.</div></div>
 </div>
@@ -161,7 +146,7 @@ var HOL_EXTRA=[];
 function isOff(d){if(!d)return false;var w=new Date(d+"T00:00:00").getDay();return w===0||w===6||!!HOL_BASE[d]||HOL_EXTRA.indexOf(d)>-1}
 function updOff(){var o=isOff(cur);["cardDir","cardTbm"].forEach(function(id){var c=$(id);if(!c)return;if(o)c.setAttribute("inert","");else c.removeAttribute("inert");c.style.opacity=o?".45":"";c.querySelector(".offnote").style.display=o?"block":"none"})}
 function updDay(){if(!cur)return;updOff();var dt=new Date(cur+"T00:00:00");$("dow").textContent=["일","월","화","수","목","금","토"][dt.getDay()]+"요일"+(isOff(cur)?" · 휴일(주말·공휴일)":"");$("chker").textContent=checkersFor(cur)}
-function checkersFor(d){return isOff(d)?"경정비 일상검사":CHECKERS}
+function checkersFor(d){return isOff(d)?CHK_OFF:CHECKERS}
 
 var GAS=[["g1","관리동냉온수기"],["g2","검사고냉온수기"],["g3","연관보일러"],["g4","검사고보일러"],["g5","식당"]];
 var WAT=[["w1","시수(대)"],["w2","시수(소)"],["w3","시수(귤현)"],["w4","연관보일러 1"],["w5","연관보일러 2"],["w6","검사고"],["w7","옥외세척고"],["w8","정수"]];
@@ -170,7 +155,7 @@ var SAFE_DEF=["금일 작업별 유해·위험요인 파악 및 안전관리 대
 var DIV=[["m","기 계"],["e","전 기"],["f","소 방"],["v","환 경"],["c","조경·건축"],["b","방 재 실"]];
 var CHK=[["일일/주간"],["월간이상"],["기타"]];
 var CB=["lm","le","lf","lv","lc"];
-var EXEMPT={"우제영":"근로시간면제"};
+var EXEMPT={"우제영":"근로시간면제"},CHK_OFF="경정비 일상검사";
 var NAMES=["이근수","유성재","이이규","노성주","김종원","위차준","정용기","송대성","이경탁","남상준","김대우","최철훈","정명진","전면우","정일서","우제영"];
 
 var POOL=POOL_DEF.slice(),SAFE=SAFE_DEF.slice();
@@ -184,12 +169,15 @@ function setStatus(t,c){var s=$("st");s.textContent=t;s.className="note st-"+(c|
 function errMsg(e){return(e&&e.message)?e.message:"오류"}
 function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
 
+function buildAl(){
+ var h="";NAMES.forEach(function(n,i){if(EXEMPT[n]){h+='<div><b>'+n+'</b><span class="note">'+EXEMPT[n]+' (측정 안 함)</span></div>';return}h+='<div><b>'+n+'</b><select data-k="as'+i+'" class="ast" title="비번/휴무 선택"><option value="">측정</option><option>비번</option><option>휴무</option></select><input type="number" step="0.01" min="0" class="sm" value="0.00" data-k="a'+i+'"><input type="time" data-k="at'+i+'"><button type="button" class="g clk" data-t="at'+i+'" title="현재 시간 입력">현재 시간</button></div>'});$("al").innerHTML=h;
+}
 function build(){
  var h="";GAS.forEach(function(g){h+='<tr><td class="l">'+g[1]+'</td><td><input type="number" class="p" data-k="p_'+g[0]+'" data-m="'+g[0]+'"></td><td><input type="number" data-k="c_'+g[0]+'" data-m="'+g[0]+'" class="c"></td><td class="u" id="u_'+g[0]+'"></td></tr>'});$("gas").innerHTML=h;
  h="";WAT.forEach(function(g){h+='<tr><td class="l">'+g[1]+'</td><td><input type="number" class="p" data-k="p_'+g[0]+'" data-m="'+g[0]+'"></td><td><input type="number" data-k="c_'+g[0]+'" data-m="'+g[0]+'" class="c"></td><td class="u" id="u_'+g[0]+'"></td></tr>'});$("wat").innerHTML=h;
  h="";CHK.forEach(function(r){h+='<tr><td>'+r[0]+'</td>';CB.forEach(function(c,i){h+='<td><input type="number" class="sm" style="width:56px" value="'+(r[0]=="일일/주간"?0:"")+'" data-k="'+c+i+r[0]+'"></td>'.replace(c+i+r[0],c+"_"+CHK.indexOf(r))});h+='</tr>'});$("chk").innerHTML=h;
   h="";DIV.forEach(function(d){h+='<div style="margin:8px 0"><b>'+d[1]+'</b><div class="grid2"><div><label>금일 업무내용</label><textarea data-k="t_'+d[0]+'"></textarea></div><div><label>익일 업무계획</label><textarea data-k="n_'+d[0]+'"></textarea></div></div></div>'});$("div").innerHTML=h;
- h="";NAMES.forEach(function(n,i){if(EXEMPT[n]){h+='<div><b>'+n+'</b><span class="note">'+EXEMPT[n]+' (측정 안 함)</span></div>';return}h+='<div><b>'+n+'</b><select data-k="as'+i+'" class="ast" title="비번/휴무 선택"><option value="">측정</option><option>비번</option><option>휴무</option></select><input type="number" step="0.01" min="0" class="sm" value="0.00" data-k="a'+i+'"><input type="time" data-k="at'+i+'"><button type="button" class="g clk" data-t="at'+i+'" title="현재 시간 입력">현재 시간</button></div>'});$("al").innerHTML=h;
+ buildAl();
 }
 
 function fields(){return document.querySelectorAll("[data-k]")}
@@ -333,15 +321,8 @@ async function loadWT(){
  try{var r=await sb.from("settings").select("value").eq("key","worktypes").maybeSingle();if(r.error)throw r.error;
   if(r.data&&Array.isArray(r.data.value))WT=r.data.value}
  catch(e){setStatus("작업 종류를 불러오지 못했습니다: "+errMsg(e),"err")}
- wtRender(WT);showCustom();
+ showCustom();
 }
-function wtRender(arr){
- var h="";arr.forEach(function(){h+='<div class="card wte"><div class="row"><label>작업 종류</label><input class="wn" style="flex:1;min-width:160px"><button type="button" class="g wdel">삭제</button></div><label>키워드 (쉼표로 구분)</label><input class="wk" style="width:100%"><label>적용 월 (비우면 연중 / 예: 6-8 또는 11-2 또는 6-8,12)</label><input class="wm" style="width:100%" placeholder="예: 6-8"><label>위험요인 (한 줄에 하나)</label><textarea class="wr"></textarea><label>관리감독자 지시사항 (한 줄에 하나)</label><textarea class="wi"></textarea></div>'});
- $("wted").innerHTML=h||'<div class="note">등록된 작업 종류가 없습니다. ‘작업 종류 추가’를 눌러 등록하세요.</div>';
- var bl=$("wted").querySelectorAll(".wte");
- arr.forEach(function(t,i){bl[i].querySelector(".wn").value=t.name||"";bl[i].querySelector(".wk").value=(t.kw||[]).join(", ");bl[i].querySelector(".wm").value=t.m||"";bl[i].querySelector(".wr").value=(t.risks||[]).join("\n");bl[i].querySelector(".wi").value=(t.inst||[]).join("\n")});
-}
-function wtRead(){return[].slice.call($("wted").querySelectorAll(".wte")).map(function(b){return{name:b.querySelector(".wn").value.trim(),kw:b.querySelector(".wk").value.split(/[,，\n]/).map(function(x){return x.trim()}).filter(Boolean),m:b.querySelector(".wm").value.trim(),risks:lines(b.querySelector(".wr").value),inst:lines(b.querySelector(".wi").value)}})}
 function workText(){
  var n=0;DIV.map(function(d){return"t_"+d[0]}).forEach(function(k){q(k).split("\n").forEach(function(l){if(/^\s*-/.test(l))n++})});
  var raw=q("t_m").split("\n").filter(function(l){return l.trim()})[0]||"";
@@ -466,23 +447,22 @@ async function loadLists(){
  try{var r=await sb.from("settings").select("value").eq("key","lists").maybeSingle();if(r.error)throw r.error;
   var L=r.data&&r.data.value;if(L){if(L.pool&&L.pool.length)POOL=L.pool;if(L.safe&&L.safe.length)SAFE=L.safe}}
  catch(e){setStatus("목록을 불러오지 못했습니다: "+errMsg(e),"err")}
- cfgFill();
+ await loadNames();
  await loadHol();
  await loadWT();
+}
+async function loadNames(){
+ try{var r=await sb.from("settings").select("value").eq("key","names").maybeSingle();if(r.error)throw r.error;
+  var v=r.data&&r.data.value;
+  if(v&&Array.isArray(v.list)&&v.list.length===16){NAMES=v.list.slice();EXEMPT={};(v.exempt||[]).forEach(function(i){if(NAMES[i])EXEMPT[NAMES[i]]=v.exemptLabel||"근로시간면제"});if(v.checkers)CHECKERS=v.checkers;if(v.offChecker)CHK_OFF=v.offChecker}}
+ catch(e){}
+ buildAl();
 }
 async function loadHol(){
  try{var r=await sb.from("settings").select("value").eq("key","holidays").maybeSingle();if(r.error)throw r.error;
   if(r.data&&Array.isArray(r.data.value))HOL_EXTRA=r.data.value.filter(function(x){return/^\d{4}-\d{2}-\d{2}$/.test(x)})}
  catch(e){}
- $("cfgh").value=HOL_EXTRA.join("\n");
 }
-$("holsave").onclick=async function(){
- var a=lines($("cfgh").value),bad=a.filter(function(x){return!/^\d{4}-\d{2}-\d{2}$/.test(x)||isNaN(new Date(x+"T00:00:00"))});
- if(bad.length){$("holmsg").textContent="날짜 형식이 올바르지 않습니다: "+bad[0]+" (예: 2027-06-03)";return}
- try{var r=await sb.from("settings").upsert({key:"holidays",value:a,updated_at:new Date().toISOString()});if(r.error)throw r.error}
- catch(e){$("holmsg").textContent="저장하지 못했습니다: "+errMsg(e);return}
- HOL_EXTRA=a.slice();updDay();$("holmsg").textContent="저장했습니다. 다른 컴퓨터는 새로고침하면 반영됩니다."};
-function cfgFill(){$("cfgp").value=POOL.join("\n");$("cfgs").value=SAFE.join("\n")}
 function lines(v){return v.split("\n").map(function(x){return x.trim()}).filter(function(x,i,a){return x&&a.indexOf(x)===i})}
 
 /* ---- 화면 동작 연결 ---- */
@@ -493,18 +473,6 @@ document.addEventListener("input",function(e){var t=e.target;if(!t.dataset||!t.d
 $("wauto").onclick=function(){rec._wAuto=true;autoWork();touch()};
 document.addEventListener("change",function(e){if(e.target.dataset&&e.target.dataset.k)touch()});
 $("wbtn").onclick=function(){getWeather(true)};
-$("wtnew").onclick=function(){var a=wtRead();a.push({name:"",kw:[],risks:[],inst:[]});wtRender(a)};
-$("wted").addEventListener("click",function(e){var b=e.target.closest(".wdel");if(!b)return;
- var a=wtRead(),i=[].indexOf.call($("wted").querySelectorAll(".wte"),b.closest(".wte"));a.splice(i,1);wtRender(a)});
-$("wtsave").onclick=async function(){
- var a=wtRead().filter(function(t){return t.name||t.kw.length||t.risks.length||t.inst.length}),seen={};
- for(var i=0;i<a.length;i++){
-  if(!a[i].name){$("wtmsg").textContent="작업 종류 이름을 입력해 주세요.";return}
-  if(seen[a[i].name]){$("wtmsg").textContent="같은 이름의 작업 종류가 있습니다: "+a[i].name;return}
-  seen[a[i].name]=1}
- try{var r=await sb.from("settings").upsert({key:"worktypes",value:a,updated_at:new Date().toISOString()});if(r.error)throw r.error}
- catch(e){$("wtmsg").textContent="저장하지 못했습니다: "+errMsg(e);return}
- WT=a;wtRender(WT);showCustom();$("wtmsg").textContent="저장했습니다. 다른 컴퓨터는 새로고침하면 반영됩니다."};
 $("wtadd").onclick=function(){var n=$("wtsel").value,t=wtByName(n);if(!t)return;
  rec.wtAdd=rec.wtAdd||[];if(rec.wtAdd.indexOf(n)<0)rec.wtAdd.push(n);
  rec.custom=rec.custom||[];addInst(t);
@@ -528,19 +496,9 @@ $("carry").onclick=function(){var p=null;for(var i=0;i<prevData.length;i++){if(!
 function alSync(){NAMES.forEach(function(n,i){var a=document.querySelector('[data-k="as'+i+'"]');if(!a)return;var on=!!a.value;[document.querySelector('[data-k="a'+i+'"]'),document.querySelector('[data-k="at'+i+'"]')].forEach(function(e){if(e)e.disabled=on});var b=document.querySelector('.clk[data-t="at'+i+'"]');if(b)b.disabled=on})}
 $("al").addEventListener("change",function(e){if(e.target.classList.contains("ast"))alSync()});
 $("al").addEventListener("click",function(e){var b=e.target.closest(".clk");if(!b)return;var el=document.querySelector('[data-k="'+b.dataset.t+'"]');el.value=hhmm();touch()});
-$("cfgsave").onclick=async function(){var p=lines($("cfgp").value),t=lines($("cfgs").value);
- if(!p.length||!t.length){$("cfgmsg").textContent="각 목록에 항목이 1개 이상 있어야 합니다.";return}
- try{var r=await sb.from("settings").upsert({key:"lists",value:{pool:p,safe:t},updated_at:new Date().toISOString()});if(r.error)throw r.error}
- catch(e){$("cfgmsg").textContent="저장하지 못했습니다: "+errMsg(e);return}
- POOL=p;SAFE=t;cfgFill();showDir();showSf();$("cfgmsg").textContent="저장했습니다. 다른 컴퓨터는 새로고침하면 반영됩니다."};
-$("cfgdef").onclick=function(){$("cfgp").value=POOL_DEF.join("\n");$("cfgs").value=SAFE_DEF.join("\n");$("cfgmsg").textContent="기본 목록을 불러왔습니다. ‘목록 저장’을 눌러야 적용됩니다."};
 $("cbox").addEventListener("click",async function(e){if(e.target.id==="creload"){var d=cur;conflict=false;dirty=false;await load(d)}});
-$("clr").onclick=async function(){if(!confirm(cur+" 일지에 입력·저장된 내용(사진 포함)을 모두 지웁니다.\n지운 뒤에는 되돌릴 수 없습니다. 계속할까요?"))return;
- rec={};photo=null;conflict=false;$("cbox").style.display="none";fillFields();dirty=true;ver++;await saveNow()};
-$("bk").onclick=function(){var b=$("bkbox");b.style.display=b.style.display==="none"?"block":"none";if(!$("bkm").value)$("bkm").value=cur.slice(0,7);$("bkmsg").textContent=""};
-$("bkx").onclick=function(){$("bkbox").style.display="none"};
-$("bkpdf").onclick=async function(){
- var m=$("bkm").value,msg=$("bkmsg");if(!/^\d{4}-\d{2}$/.test(m)){msg.textContent="월을 선택해 주세요.";return}
+async function exportMonth(m){
+ var msg={};Object.defineProperty(msg,"textContent",{set:function(t){setStatus(t,"w")}});
  msg.textContent="만드는 중…";
  var sv={cur:cur,rec:rec,photo:photo};
  try{await flush();
@@ -567,11 +525,30 @@ window.addEventListener("beforeunload",function(e){if(dirty&&!conflict){e.preven
 document.addEventListener("visibilitychange",function(){if(document.hidden&&dirty&&!conflict)saveNow()});
 
 /* ---- 로그인 ---- */
+$("adm").onclick=function(){var b=$("admbox");b.style.display=b.style.display==="none"?"block":"none";$("admmsg").textContent=""};
+$("admx").onclick=function(){$("admbox").style.display="none"};
+$("admf").addEventListener("submit",async function(e){
+ e.preventDefault();var msg=$("admmsg"),ss=null;try{ss=window.sessionStorage;ss.setItem("_t","1");ss.removeItem("_t")}catch(x){ss=null}
+ if(!ss||typeof supabase==="undefined"){msg.textContent="이 브라우저에서는 관리자 로그인을 사용할 수 없습니다.";return}
+ msg.textContent="로그인 중…";
+ try{var cl=supabase.createClient(SB_URL,SB_KEY,{auth:{storage:ss,persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+  var r=await cl.auth.signInWithPassword({email:$("adme").value.trim(),password:$("admp").value});
+  if(r.error){var m=r.error.message||"";
+   if(/invalid login/i.test(m))msg.textContent="이메일 또는 비밀번호가 올바르지 않습니다.";
+   else if(/fetch|network|load failed/i.test(m))msg.textContent="서버에 연결하지 못했습니다. 인터넷 연결을 확인하세요.";
+   else msg.textContent="로그인하지 못했습니다: "+m;
+   return}
+  $("admp").value="";ss.setItem("dlAdminAt",String(Date.now()));await flush();location.href="admin.html";
+ }catch(x){msg.textContent="로그인하지 못했습니다: "+errMsg(x)}
+});
 async function start(){
  $("app").style.display="block";
  await loadLists();
  $("date").value=iso(new Date());
+
  await load($("date").value);
+ var ex=new URLSearchParams(location.search).get("export");
+ if(ex&&/^\d{4}-\d{2}$/.test(ex))await exportMonth(ex);
 }
 async function boot(){
  build();
