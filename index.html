@@ -136,6 +136,7 @@ var SB_URL="https://nqxjiuklvhqzbpfqbrxx.supabase.co";
 var SB_KEY="sb_publishable_OvYm6966dyk9Z9IyiKpi_Q_bM2FBQtJ";
 var sb=null;try{if(typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}})}catch(e){}
 
+var BDEF="- 자동제어 설비 작동 이상여부 감시 및 방송장비점검";
 var CHECKERS="안한전, 이태금";
 var HOL_BASE={
 "2026-01-01":1,"2026-02-16":1,"2026-02-17":1,"2026-02-18":1,"2026-03-01":1,"2026-03-02":1,"2026-05-01":1,"2026-05-05":1,"2026-05-24":1,"2026-05-25":1,"2026-06-03":1,"2026-06-06":1,"2026-07-17":1,"2026-08-15":1,"2026-08-17":1,"2026-09-24":1,"2026-09-25":1,"2026-09-26":1,"2026-10-03":1,"2026-10-05":1,"2026-10-09":1,"2026-12-25":1,
@@ -175,7 +176,7 @@ function build(){
  var h="";GAS.forEach(function(g){h+='<tr><td class="l">'+g[1]+'</td><td><input type="number" class="p" data-k="p_'+g[0]+'" data-m="'+g[0]+'"></td><td><input type="number" data-k="c_'+g[0]+'" data-m="'+g[0]+'" class="c"></td><td class="u" id="u_'+g[0]+'"></td></tr>'});$("gas").innerHTML=h;
  h="";WAT.forEach(function(g){h+='<tr><td class="l">'+g[1]+'</td><td><input type="number" class="p" data-k="p_'+g[0]+'" data-m="'+g[0]+'"></td><td><input type="number" data-k="c_'+g[0]+'" data-m="'+g[0]+'" class="c"></td><td class="u" id="u_'+g[0]+'"></td></tr>'});$("wat").innerHTML=h;
  h="";CHK.forEach(function(r){h+='<tr><td>'+r[0]+'</td>';CB.forEach(function(c,i){h+='<td><input type="number" class="sm" style="width:56px" value="'+(r[0]=="일일/주간"?0:"")+'" data-k="'+c+i+r[0]+'"></td>'.replace(c+i+r[0],c+"_"+CHK.indexOf(r))});h+='</tr>'});$("chk").innerHTML=h;
-  h="";DIV.forEach(function(d){h+='<div style="margin:8px 0"><b>'+d[1]+'</b><div class="grid2"><div><label>금일 업무내용</label><textarea data-k="t_'+d[0]+'"></textarea></div><div><label>익일 업무계획</label><textarea data-k="n_'+d[0]+'"></textarea></div></div></div>'});$("div").innerHTML=h;
+  h="";DIV.forEach(function(d){h+='<div style="margin:8px 0"><b>'+d[1]+'</b><div class="grid2"><div><label>금일 업무내용</label><textarea data-k="t_'+d[0]+'">'+(d[0]==="b"?BDEF:"")+'</textarea></div><div><label>익일 업무계획</label><textarea data-k="n_'+d[0]+'">'+(d[0]==="b"?BDEF:"")+'</textarea></div></div></div>'});$("div").innerHTML=h;
  buildAl();
 }
 
@@ -265,13 +266,13 @@ async function getWeather(manual){
 }
 var WT=[],custItems=[],actNames=[];
 function wtByName(n){for(var i=0;i<WT.length;i++)if(WT[i].name===n)return WT[i];return null}
-function nz(x){return String(x).toLowerCase().replace(/\s+/g,"")}
+function nz(x){return String(x).toLowerCase().replace(/[ \t\u3000]+/g," ").trim()}
 function kwOf(t){return(t.kw||[]).concat([t.name]).map(nz).filter(Boolean)}
 var MAXC=5,capHit=false;
 function addInst(t){(t.inst||[]).forEach(function(x){if(rec.custom.indexOf(x)>-1)return;if(rec.custom.length<MAXC)rec.custom.push(x);else capHit=true})}
 function matchedNames(){
- var txt=["t_common"].concat(DIV.map(function(d){return"t_"+d[0]})).map(q).join("\n");txt=nz(txt);
- return WT.filter(function(t){return inSeason(t)&&kwOf(t).some(function(k){return txt.indexOf(k)>-1})}).map(function(t){return t.name})}
+ var txt=["t_common"].concat(DIV.map(function(d){return"t_"+d[0]})).map(q).join("\n").split("\n").map(nz);
+ return WT.filter(function(t){return inSeason(t)&&kwOf(t).some(function(k){return txt.some(function(l){return l.indexOf(k)>-1})})}).map(function(t){return t.name})}
 function inSeason(t){
  var m=String(t.m||"").replace(/\s+/g,"");if(!m)return true;
  var mo=+(cur||"").slice(5,7);if(!mo)return true;
