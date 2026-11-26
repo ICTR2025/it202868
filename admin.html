@@ -226,21 +226,20 @@ $("csvgo").onclick=async function(){
   var rows=[],from=0,N=500;
   for(;;){var r=await sb.from("logs").select("log_date,data").order("log_date",{ascending:true}).range(from,from+N-1);if(r.error)throw r.error;
    rows=rows.concat(r.data||[]);msg.textContent=rows.length+"일 불러옴...";if(!r.data||r.data.length<N)break;from+=N}
-  var DV=[["m","기계"],["e","전기"],["f","소방"],["v","환경"],["c","조경건축"],["b","방재실"]],DW=["일","월","화","수","목","금","토"];
-  var head=["날짜","요일","공통 업무내용"],ks=[];
-  DV.forEach(function(d){head.push(d[1]+" 금일");ks.push("t_"+d[0])});DV.forEach(function(d){head.push(d[1]+" 익일");ks.push("n_"+d[0])});
-  head.push("작업공정");
-  var out=[head],skip=0;
-  rows.forEach(function(r){var d=r.data||{};
-   var vals=["t_common"].concat(ks).map(function(k){return String(d[k]||"").trim()});
-   if(!vals.some(function(v){return v})){skip++;return}
-   var dt=new Date(r.log_date+"T00:00:00");
-   out.push([r.log_date,DW[dt.getDay()]].concat(vals,[String(d.tbm_w||"").trim()]))});
+  var DV=[["common","공통"],["m","기계"],["e","전기"],["f","소방"],["v","환경"],["c","조경(건축)"],["b","방재실"]];
+  var ln=function(t){return String(t||"").split("\n").map(function(l){return l.replace(/^\s*[-·•*ㆍ○※◦▪▶]+\s*/,"").trim()}).filter(Boolean)};
+  var out=[["날짜","요일","분야","금일","익일"]],skip=0,days=0;
+  var DW=["일","월","화","수","목","금","토"];
+  rows.forEach(function(r){var d=r.data||{},dt=new Date(r.log_date+"T00:00:00"),n0=out.length;
+   DV.forEach(function(v){
+    var T=ln(v[0]==="common"?d.t_common:d["t_"+v[0]]),N=v[0]==="common"?[]:ln(d["n_"+v[0]]),k=Math.max(T.length,N.length);
+    for(var x=0;x<k;x++)out.push([r.log_date,DW[dt.getDay()],v[1],T[x]||"",N[x]||""])});
+   if(out.length===n0)skip++;else days++});
   if(out.length<2){msg.textContent="내용이 입력된 일지가 없습니다.";return}
-  var csv="﻿"+out.map(function(l){return l.map(function(v){return'"'+String(v).replace(/"/g,'""')+'"'}).join(",")}).join("\r\n");
+  var csv="﻿"+out.map(function(l){return l.map(function(v){return'"'+String(v).replace(/^([=+\-@\t\r])/,' $1').replace(/"/g,'""')+'"'}).join(",")}).join("\r\n");
   var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
   a.download="일지내용_"+out[1][0]+"_"+out[out.length-1][0]+".csv";document.body.appendChild(a);a.click();a.remove();
-  msg.textContent=(out.length-1)+"일치를 저장했습니다."+(skip?" (내용이 비어 있는 "+skip+"일 제외)":"");
+  msg.textContent=days+"일치("+(out.length-1)+"줄)를 저장했습니다."+(skip?" (내용이 비어 있는 "+skip+"일 제외)":"");
  }catch(e){msg.textContent="실패: "+errMsg(e)}finally{btn.disabled=false}};
 
 /* ---- 삭제 ---- */
